@@ -2,22 +2,30 @@
 import { ref, reactive } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/authStore'
+// import ApiService from '@/services/api'
+import { authService } from '@/services/authServices.js'
 
 const router = useRouter()
 const auth = useAuthStore()
 
 const form = reactive({
-  companyName: '',
+  businessName: '',
   contactName: '',
   email: '',
   phone: '',
   businessType: null,
   password: '',
   confirmPassword: '',
-  agreeTerms: false,
+  agreeTerms: false
 })
 
-const businessTypes = ['Event Organizer', 'Ticketing Platform', 'Venue', 'Aggregator / Marketplace', 'Other']
+const businessTypes = [
+  'Event Organizer',
+  'Ticketing Platform',
+  'Venue',
+  'Aggregator / Marketplace',
+  'Other'
+]
 
 const loading = ref(false)
 const errorMsg = ref('')
@@ -28,7 +36,7 @@ const rules = {
   email: (v) => /.+@.+\..+/.test(v) || 'Enter a valid email address.',
   minLen: (n) => (v) => (v || '').length >= n || `Must be at least ${n} characters.`,
   matchPassword: (v) => v === form.password || 'Passwords do not match.',
-  isTrue: (v) => v === true || 'You must accept the terms to continue.',
+  isTrue: (v) => v === true || 'You must accept the terms to continue.'
 }
 
 async function handleSubmit() {
@@ -38,7 +46,8 @@ async function handleSubmit() {
 
   loading.value = true
   try {
-    await auth.register(form)
+    const data = await authService.signup({ ...form })
+    console.log(data)
     router.push({ name: 'dashboard' })
   } catch (err) {
     errorMsg.value = err.message
@@ -54,8 +63,12 @@ async function handleSubmit() {
       <!-- Signature: ticket-stub header -->
       <div class="relative bg-ink rounded-t-2xl px-8 pt-8 pb-6 text-paper overflow-hidden">
         <p class="font-mono text-xs tracking-widest text-gold uppercase">Quidly · Partner Access</p>
-        <h1 class="font-display text-4xl font-bold tracking-tight mt-1">Create your partner account</h1>
-        <p class="text-sm text-paper/60 mt-2">Get sandbox API keys in minutes — no card required.</p>
+        <h1 class="font-display text-4xl font-bold tracking-tight mt-1">
+          Create your partner account
+        </h1>
+        <p class="text-sm text-paper/60 mt-2">
+          Get sandbox API keys in minutes — no card required.
+        </p>
       </div>
 
       <!-- Perforated tear line -->
@@ -66,11 +79,18 @@ async function handleSubmit() {
       </div>
 
       <div class="bg-white rounded-b-2xl shadow-xl px-8 pt-10 pb-8">
-        <v-alert v-if="errorMsg" type="error" variant="tonal" density="comfortable" class="mb-5" :text="errorMsg" />
+        <v-alert
+          v-if="errorMsg"
+          type="error"
+          variant="tonal"
+          density="comfortable"
+          class="mb-5"
+          :text="errorMsg"
+        />
 
         <v-form ref="formRef" @submit.prevent="handleSubmit">
           <v-text-field
-            v-model="form.companyName"
+            v-model="form.businessName"
             label="Company / platform name"
             :rules="[rules.required]"
             variant="outlined"
@@ -137,7 +157,9 @@ async function handleSubmit() {
             hide-details="auto"
           >
             <template #label>
-              <span class="text-sm text-gray-600">I agree to Quidly's Partner Terms and API Usage Policy.</span>
+              <span class="text-sm text-gray-600"
+                >I agree to Quidly's Partner Terms and API Usage Policy.</span
+              >
             </template>
           </v-checkbox>
 
@@ -155,7 +177,9 @@ async function handleSubmit() {
 
         <p class="text-center text-sm text-gray-500 mt-6">
           Already have an account?
-          <RouterLink to="/" class="text-ink font-semibold hover:text-gold transition-colors">Log in</RouterLink>
+          <RouterLink to="/" class="text-ink font-semibold hover:text-gold transition-colors"
+            >Log in</RouterLink
+          >
         </p>
       </div>
     </div>

@@ -1,78 +1,61 @@
-// src/stores/authStore.js
-import { defineStore } from 'pinia'
-import { DEMO_PARTNER, DEMO_PASSWORD, simulateDelay } from '@/lib/mockData'
-
-const SESSION_KEY = 'quidly_partner_session'
-const PARTNERS_KEY = 'quidly_registered_partners'
-
-function readPartners() {
-  const raw = localStorage.getItem(PARTNERS_KEY)
-  return raw ? JSON.parse(raw) : [{ ...DEMO_PARTNER, password: DEMO_PASSWORD }]
-}
-
-function writePartners(list) {
-  localStorage.setItem(PARTNERS_KEY, JSON.stringify(list))
-}
+import { defineStore } from "pinia";
+import { supabase } from '@/services/supabase'
+// import ApiService from '../services/api.ts'
 
 export const useAuthStore = defineStore('auth', {
-  state: () => ({
-    partner: JSON.parse(localStorage.getItem(SESSION_KEY) || 'null'),
-    environment: 'sandbox', // sandbox | live
+  state: () => ({ 
+    user: null,
+    session: null,
+    loading: false
   }),
+
   getters: {
-    isAuthenticated: (state) => !!state.partner,
+    isAuthenticated: (state) => !!state.session
   },
+
   actions: {
-    async register(form) {
-      await simulateDelay(1100)
-      const partners = readPartners()
+    // 🔐 LOGIN
+    async login(payload) {
+      this.loading = true
 
-      if (partners.some((p) => p.email.toLowerCase() === form.email.toLowerCase())) {
-        throw new Error('An account with this email already exists.')
+      try {
+        const { data, error } = await supabase.auth.signInWithPassword(payload)
+
+        if (error) throw error
+        console.log('login data:', data)
+        this.user = data.user
+        this.session = data.session
+
+        return data
+      } catch (err) {
+        throw err
+      } finally {
+        this.loading = false
       }
-
-      const newPartner = {
-        id: `ptn_${Date.now()}`,
-        companyName: form.companyName,
-        contactName: form.contactName,
-        email: form.email,
-        phone: form.phone,
-        businessType: form.businessType,
-        password: form.password,
-        createdAt: new Date().toISOString(),
-      }
-
-      partners.push(newPartner)
-      writePartners(partners)
-
-      const { password, ...safePartner } = newPartner
-      this.partner = safePartner
-      localStorage.setItem(SESSION_KEY, JSON.stringify(safePartner))
-      return safePartner
     },
 
-    async login({ email, password }) {
-      await simulateDelay(900)
-      const partners = readPartners()
-      const found = partners.find((p) => p.email.toLowerCase() === email.toLowerCase())
+    // 🚪 LOGOUT
+    async logout() {
+      await supabase.auth.signOut()
 
-      if (!found || found.password !== password) {
-        throw new Error('Incorrect email or password.')
-      }
-
-      const { password: _pw, ...safePartner } = found
-      this.partner = safePartner
-      localStorage.setItem(SESSION_KEY, JSON.stringify(safePartner))
-      return safePartner
+      this.user = null
+      this.session = null
     },
 
-    logout() {
-      this.partner = null
-      localStorage.removeItem(SESSION_KEY)
+    // 🔄 GET CURRENT SESSION (on app load)
+    async fetchSession() {
+      const { data } = await supabase.auth.getSession()
+
+      this.session = data.session
+      this.user = data.session?.user || null
     },
 
-    setEnvironment(env) {
-      this.environment = env
-    },
-  },
+    // 👂 LISTEN FOR AUTH CHANGES
+    initAuthListener() {
+      supabase.auth.onAuthStateChange((event, session) => {
+        this.session = session
+        this.user = session?.user || null
+      })
+    }
+  }
 })
