@@ -48,6 +48,7 @@ async function handleSubmit() {
   try {
     const data = await authService.signup({ ...form })
     console.log(data)
+    console.log(form)
     router.push({ name: 'dashboard' })
   } catch (err) {
     errorMsg.value = err.message
