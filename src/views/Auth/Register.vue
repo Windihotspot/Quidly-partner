@@ -213,6 +213,10 @@
                   </li>
                   <li class="flex items-center gap-2 text-sm text-gray-700">
                     <span class="w-1.5 h-1.5 bg-blue-600 rounded-full"></span>
+                    Create customized Events
+                  </li>
+                  <li class="flex items-center gap-2 text-sm text-gray-700">
+                    <span class="w-1.5 h-1.5 bg-blue-600 rounded-full"></span>
                     QR code ticket generation
                   </li>
                   <li class="flex items-center gap-2 text-sm text-gray-700">
