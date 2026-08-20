@@ -52,6 +52,14 @@
     >
       {{ processing ? 'Generating Ticket…' : 'Download Ticket' }}
     </button>
+   <v-btn
+   variant="text"
+  class="ma-4"
+  color="primary"
+  @click="goHome"
+>
+  Go Home
+</v-btn>
 
     <button
       v-if="session.returnUrl"
@@ -177,7 +185,8 @@
 
 <script setup>
 import { computed, onMounted, onUnmounted, reactive, ref } from 'vue'
-
+import {useRouter} from 'vue-router'
+const router = useRouter()
 // ========================================================================
 // Config
 // ========================================================================
@@ -193,7 +202,9 @@ const GET_TICKET_ENDPOINT =
 // ========================================================================
 // Session
 // ========================================================================
-
+const goHome = () => {
+  router.push('/')
+}
 const session = reactive({
   valid: false,
   sessionId: '',
@@ -532,7 +543,6 @@ async function downloadTicket() {
   if (!session.transactionId) {
     bankError.value =
       'Transaction ID is missing. Unable to download ticket.'
-
     return
   }
 
@@ -553,8 +563,7 @@ async function downloadTicket() {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          transaction_id:
-            session.transactionId,
+          transaction_id: session.transactionId,
         }),
       }
     )
@@ -564,17 +573,14 @@ async function downloadTicket() {
     // --------------------------------------------------------------
 
     if (!response.ok) {
-      let errorMessage =
-        'Failed to generate ticket.'
+      let errorMessage = 'Failed to generate ticket.'
 
       try {
-        const errorData =
-          await response.json()
+        const errorData = await response.json()
 
         errorMessage =
           errorData.error ||
           errorMessage
-
       } catch {
         // Response was not JSON
       }
@@ -587,21 +593,14 @@ async function downloadTicket() {
     // --------------------------------------------------------------
 
     const contentType =
-      response.headers.get(
-        'Content-Type'
-      ) || ''
+      response.headers.get('Content-Type') || ''
 
-    if (
-      !contentType.includes(
-        'application/pdf'
-      )
-    ) {
+    if (!contentType.includes('application/pdf')) {
       let errorMessage =
         'The ticket service did not return a PDF.'
 
       try {
-        const errorData =
-          await response.json()
+        const errorData = await response.json()
 
         errorMessage =
           errorData.error ||
@@ -617,20 +616,29 @@ async function downloadTicket() {
     // Convert response to Blob
     // --------------------------------------------------------------
 
-    const blob =
-      await response.blob()
+    const blob = await response.blob()
 
     // --------------------------------------------------------------
-    // Trigger browser download
+    // Create object URL
     // --------------------------------------------------------------
 
-    const downloadUrl =
+    const ticketUrl =
       window.URL.createObjectURL(blob)
+
+    // --------------------------------------------------------------
+    // OPEN TICKET IN NEW TAB
+    // --------------------------------------------------------------
+
+    window.open(ticketUrl, '_blank')
+
+    // --------------------------------------------------------------
+    // DOWNLOAD TICKET
+    // --------------------------------------------------------------
 
     const link =
       document.createElement('a')
 
-    link.href = downloadUrl
+    link.href = ticketUrl
 
     link.download =
       `${session.reference || 'ticket'}.pdf`
@@ -645,9 +653,11 @@ async function downloadTicket() {
     // Cleanup
     // --------------------------------------------------------------
 
-    window.URL.revokeObjectURL(
-      downloadUrl
-    )
+    // Give the new tab/download enough time to access
+    // the object URL before revoking it.
+    setTimeout(() => {
+      window.URL.revokeObjectURL(ticketUrl)
+    }, 10000)
 
   } catch (error) {
     console.error(
@@ -659,7 +669,6 @@ async function downloadTicket() {
       error instanceof Error
         ? error.message
         : 'Failed to download ticket.'
-
   } finally {
     processing.value = false
   }
@@ -728,6 +737,9 @@ onUnmounted(() => {
 </script>
 
 <style scoped>
+.v-btn{
+  text-transform: none;
+}
 .checkout-page {
   min-height: 100vh;
   display: flex;
