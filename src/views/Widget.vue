@@ -21,18 +21,48 @@
         <p>⚠ This payment link is invalid or has expired.</p>
       </div>
 
-      <!-- State: result screen -->
-      <div v-else-if="result" class="state-block result">
-        <div :class="['result-icon', result.status]">
-          {{ result.status === 'completed' ? '✓' : '✕' }}
-        </div>
-        <h3>{{ result.status === 'completed' ? 'Payment successful' : 'Payment failed' }}</h3>
-        <p class="muted">Reference: {{ session.reference }}</p>
-        <p v-if="result.status !== 'completed'" class="muted">{{ result.reason }}</p>
-        <button class="btn m-4 primary" @click="returnToMerchant">
-          Continue
-        </button>
-      </div>
+     <div v-else-if="result" class="state-block result">
+  <div :class="['result-icon', result.status]">
+    {{ result.status === 'completed' ? '✓' : '✕' }}
+  </div>
+
+  <h3>
+    {{ result.status === 'completed'
+      ? 'Payment successful'
+      : 'Payment failed'
+    }}
+  </h3>
+
+  <p class="muted">
+    Reference: {{ session.reference }}
+  </p>
+
+  <p
+    v-if="result.status !== 'completed'"
+    class="muted"
+  >
+    {{ result.reason }}
+  </p>
+
+  <div v-if="result.status === 'completed'">
+    <button
+      class="btn m-4 primary"
+      :disabled="processing"
+      @click="downloadTicket"
+    >
+      {{ processing ? 'Generating Ticket…' : 'Download Ticket' }}
+    </button>
+
+    <button
+      v-if="session.returnUrl"
+      class="btn secondary"
+      :disabled="processing"
+      @click="returnToMerchant"
+    >
+      Return to Merchant
+    </button>
+  </div>
+</div>
 
       <!-- Main checkout form -->
       <div v-else>
@@ -148,17 +178,26 @@
 <script setup>
 import { computed, onMounted, onUnmounted, reactive, ref } from 'vue'
 
-// ---- Config ----
-// Point this at your Supabase Edge Function base URL
-// The widget will call payment-verify to update transaction status
+// ========================================================================
+// Config
+// ========================================================================
+
 const PAYMENT_VERIFY_ENDPOINT =
   import.meta.env.VITE_PAYMENT_VERIFY_URL ||
   'https://syaxbgcwixomicckmfwq.supabase.co/functions/v1/payment-verify'
 
-// ---- Session (from URL query params) ----
+const GET_TICKET_ENDPOINT =
+  import.meta.env.VITE_GET_TICKET_URL ||
+  'https://syaxbgcwixomicckmfwq.supabase.co/functions/v1/download-ticket'
+
+// ========================================================================
+// Session
+// ========================================================================
+
 const session = reactive({
   valid: false,
   sessionId: '',
+  transactionId: '',
   reference: '',
   amount: 0,
   currency: 'NGN',
@@ -167,47 +206,92 @@ const session = reactive({
   returnUrl: '',
 })
 
+// ========================================================================
+// UI State
+// ========================================================================
+
 const loadingSession = ref(true)
 const processing = ref(false)
 const bankError = ref('')
-const result = ref(null) // { status: 'completed' | 'failed', reason }
+const result = ref(null)
+// { status: 'completed' | 'failed', reason }
+
 const copiedField = ref('')
 
-// ---- Expiry countdown ----
+// ========================================================================
+// Expiry Countdown
+// ========================================================================
+
 const EXPIRY_MINUTES = 30
+
 const expiresAt = ref(0)
 const now = ref(Date.now())
+
 let timerHandle = null
+let copyTimerHandle = null
+
+// ========================================================================
+// Computed
+// ========================================================================
 
 const formattedAmount = computed(() => {
-  const n = Number(session.amount || 0)
+  const amount = Number(session.amount || 0)
+
   return new Intl.NumberFormat('en-NG', {
     style: 'currency',
     currency: session.currency || 'NGN',
     minimumFractionDigits: 2,
-  }).format(n)
+  }).format(amount)
 })
 
-const rawAmountString = computed(() => String(Number(session.amount || 0)))
+const rawAmountString = computed(() => {
+  return String(Number(session.amount || 0))
+})
 
 const formattedTime = computed(() => {
   const msLeft = Math.max(0, expiresAt.value - now.value)
+
   const totalSeconds = Math.floor(msLeft / 1000)
   const minutes = Math.floor(totalSeconds / 60)
   const seconds = totalSeconds % 60
+
   return `${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`
 })
 
+// ========================================================================
+// Timer
+// ========================================================================
+
 function startTransferTimer() {
-  expiresAt.value = Date.now() + EXPIRY_MINUTES * 60 * 1000
+  expiresAt.value =
+    Date.now() + EXPIRY_MINUTES * 60 * 1000
+
+  if (timerHandle) {
+    clearInterval(timerHandle)
+  }
+
   timerHandle = setInterval(() => {
     now.value = Date.now()
+
+    // Stop timer once expired
+    if (now.value >= expiresAt.value) {
+      clearInterval(timerHandle)
+      timerHandle = null
+    }
   }, 1000)
 }
 
-onMounted(() => {
+// ========================================================================
+// Load Checkout Session
+// ========================================================================
+
+function loadSession() {
   const params = new URLSearchParams(window.location.search)
-  const sessionId = params.get('session_id') || params.get('session')
+
+  const sessionId =
+    params.get('session_id') ||
+    params.get('session')
+
   const reference = params.get('reference')
 
   if (!sessionId || !reference) {
@@ -218,101 +302,429 @@ onMounted(() => {
 
   session.sessionId = sessionId
   session.reference = reference
-  session.amount = Number(params.get('amount') || 0)
-  session.currency = params.get('currency') || 'NGN'
-  session.eventName = params.get('event_name') || 'Test Event'
-  session.customerEmail = params.get('email') || params.get('customer_email') || ''
-  session.returnUrl = params.get('return_url') || ''
+
+  session.amount = Number(
+    params.get('amount') || 0
+  )
+
+  session.currency =
+    params.get('currency') || 'NGN'
+
+  session.eventName =
+    params.get('event_name') || 'Test Event'
+
+  session.customerEmail =
+    params.get('email') ||
+    params.get('customer_email') ||
+    ''
+
+  session.returnUrl =
+    params.get('return_url') || ''
+
   session.valid = true
   loadingSession.value = false
 
-  if (session.valid) {
-    startTransferTimer()
-  }
-})
+  startTransferTimer()
+}
 
-onUnmounted(() => {
-  if (timerHandle) clearInterval(timerHandle)
-})
+// ========================================================================
+// Copy to Clipboard
+// ========================================================================
 
 async function copyText(value, field) {
   try {
-    await navigator.clipboard.writeText(String(value))
+    await navigator.clipboard.writeText(
+      String(value)
+    )
+
     copiedField.value = field
-    setTimeout(() => {
-      if (copiedField.value === field) copiedField.value = ''
+
+    if (copyTimerHandle) {
+      clearTimeout(copyTimerHandle)
+    }
+
+    copyTimerHandle = setTimeout(() => {
+      if (copiedField.value === field) {
+        copiedField.value = ''
+      }
     }, 1500)
+
   } catch (error) {
     console.error('Copy failed:', error)
   }
 }
 
-async function submitBankTransfer(success) {
+// ========================================================================
+// Verify Bank Transfer
+// ========================================================================
+
+async function submitBankTransfer(success = true) {
+  if (processing.value) {
+    return
+  }
+
+  // Prevent verification after expiry
+  if (Date.now() >= expiresAt.value) {
+    bankError.value =
+      'This payment session has expired. Please start a new payment.'
+
+    return
+  }
+
   processing.value = true
   bankError.value = ''
 
   try {
-    console.log('Verifying bank transfer payment...')
-    console.log('Endpoint:', PAYMENT_VERIFY_ENDPOINT)
-    console.log('Session ID:', session.sessionId)
+    console.log(
+      'Verifying bank transfer payment...'
+    )
 
-    const response = await fetch(PAYMENT_VERIFY_ENDPOINT, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        session_id: session.sessionId,
-        outcome: success ? 'success' : 'failed',
-        payment_method: 'bank_transfer',
-      }),
-    })
+    console.log(
+      'Endpoint:',
+      PAYMENT_VERIFY_ENDPOINT
+    )
+
+    console.log(
+      'Session ID:',
+      session.sessionId
+    )
+
+    const response = await fetch(
+      PAYMENT_VERIFY_ENDPOINT,
+      {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          session_id: session.sessionId,
+          outcome: success
+            ? 'success'
+            : 'failed',
+          payment_method: 'bank_transfer',
+        }),
+      }
+    )
 
     const data = await response.json()
 
+    console.log(
+      'Payment verification response:',
+      data
+    )
+
+    // --------------------------------------------------------------
+    // HTTP error
+    // --------------------------------------------------------------
+
     if (!response.ok) {
-      console.error('Payment verification failed:', data)
-      bankError.value = data.error || 'Payment verification failed'
+      console.error(
+        'Payment verification failed:',
+        data
+      )
+
+      bankError.value =
+        data.error ||
+        'Payment verification failed.'
+
       processing.value = false
       return
     }
 
-    console.log('Payment verification response:', data)
+    // --------------------------------------------------------------
+    // API-level error
+    // --------------------------------------------------------------
 
-    if (data.success) {
-      await finishPayment(
-        data.data.outcome === 'success' ? 'success' : 'failed',
-        data.data.failed_reason || null
-      )
-    } else {
-      bankError.value = data.error || 'Payment verification failed'
+    if (!data.success) {
+      bankError.value =
+        data.error ||
+        'Payment verification failed.'
+
       processing.value = false
+      return
     }
+
+    // --------------------------------------------------------------
+    // Extract verification result
+    // --------------------------------------------------------------
+
+    const paymentData = data.data
+
+    if (!paymentData) {
+      bankError.value =
+        'Invalid payment verification response.'
+
+      processing.value = false
+      return
+    }
+
+    // --------------------------------------------------------------
+    // IMPORTANT:
+    // Save transaction ID returned by payment-verify.
+    //
+    // The ticket endpoint accepts transaction_id.
+    // --------------------------------------------------------------
+
+    session.transactionId =
+      paymentData.transaction_id || ''
+
+    // --------------------------------------------------------------
+    // Finish payment
+    // --------------------------------------------------------------
+
+    await finishPayment(
+      paymentData.outcome === 'success'
+        ? 'success'
+        : 'failed',
+      paymentData.failed_reason || null
+    )
+
   } catch (error) {
-    console.error('Payment verification error:', error)
+    console.error(
+      'Payment verification error:',
+      error
+    )
+
     bankError.value =
       error instanceof Error
         ? error.message
         : 'Failed to verify payment. Please try again.'
+
     processing.value = false
   }
 }
 
-async function finishPayment(outcome, reason) {
-  let status = outcome === 'success' ? 'completed' : 'failed'
+// ========================================================================
+// Finish Payment
+// ========================================================================
 
-  if (timerHandle) clearInterval(timerHandle)
+async function finishPayment(
+  outcome,
+  reason = null
+) {
+  const status =
+    outcome === 'success'
+      ? 'completed'
+      : 'failed'
+
+  if (timerHandle) {
+    clearInterval(timerHandle)
+    timerHandle = null
+  }
+
   processing.value = false
-  result.value = { status, reason }
+
+  result.value = {
+    status,
+    reason,
+  }
 }
+
+// ========================================================================
+// Download Ticket
+// ========================================================================
+
+async function downloadTicket() {
+  if (processing.value) {
+    return
+  }
+
+  if (!session.transactionId) {
+    bankError.value =
+      'Transaction ID is missing. Unable to download ticket.'
+
+    return
+  }
+
+  processing.value = true
+  bankError.value = ''
+
+  try {
+    console.log(
+      'Downloading ticket...',
+      session.transactionId
+    )
+
+    const response = await fetch(
+      GET_TICKET_ENDPOINT,
+      {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          transaction_id:
+            session.transactionId,
+        }),
+      }
+    )
+
+    // --------------------------------------------------------------
+    // Handle failed response
+    // --------------------------------------------------------------
+
+    if (!response.ok) {
+      let errorMessage =
+        'Failed to generate ticket.'
+
+      try {
+        const errorData =
+          await response.json()
+
+        errorMessage =
+          errorData.error ||
+          errorMessage
+
+      } catch {
+        // Response was not JSON
+      }
+
+      throw new Error(errorMessage)
+    }
+
+    // --------------------------------------------------------------
+    // Make sure we received a PDF
+    // --------------------------------------------------------------
+
+    const contentType =
+      response.headers.get(
+        'Content-Type'
+      ) || ''
+
+    if (
+      !contentType.includes(
+        'application/pdf'
+      )
+    ) {
+      let errorMessage =
+        'The ticket service did not return a PDF.'
+
+      try {
+        const errorData =
+          await response.json()
+
+        errorMessage =
+          errorData.error ||
+          errorMessage
+      } catch {
+        // Ignore parsing error
+      }
+
+      throw new Error(errorMessage)
+    }
+
+    // --------------------------------------------------------------
+    // Convert response to Blob
+    // --------------------------------------------------------------
+
+    const blob =
+      await response.blob()
+
+    // --------------------------------------------------------------
+    // Trigger browser download
+    // --------------------------------------------------------------
+
+    const downloadUrl =
+      window.URL.createObjectURL(blob)
+
+    const link =
+      document.createElement('a')
+
+    link.href = downloadUrl
+
+    link.download =
+      `${session.reference || 'ticket'}.pdf`
+
+    document.body.appendChild(link)
+
+    link.click()
+
+    document.body.removeChild(link)
+
+    // --------------------------------------------------------------
+    // Cleanup
+    // --------------------------------------------------------------
+
+    window.URL.revokeObjectURL(
+      downloadUrl
+    )
+
+  } catch (error) {
+    console.error(
+      'Ticket download error:',
+      error
+    )
+
+    bankError.value =
+      error instanceof Error
+        ? error.message
+        : 'Failed to download ticket.'
+
+  } finally {
+    processing.value = false
+  }
+}
+
+// ========================================================================
+// Return to Merchant
+// ========================================================================
 
 function returnToMerchant() {
-  if (!session.returnUrl) return
-  const url = new URL(session.returnUrl)
-  url.searchParams.set('reference', session.reference)
-  url.searchParams.set('status', result.value.status)
-  window.location.href = url.toString()
+  if (!session.returnUrl) {
+    return
+  }
+
+  try {
+    const url =
+      new URL(session.returnUrl)
+
+    url.searchParams.set(
+      'reference',
+      session.reference
+    )
+
+    url.searchParams.set(
+      'status',
+      result.value?.status || ''
+    )
+
+    if (session.transactionId) {
+      url.searchParams.set(
+        'transaction_id',
+        session.transactionId
+      )
+    }
+
+    window.location.href =
+      url.toString()
+
+  } catch (error) {
+    console.error(
+      'Invalid return URL:',
+      error
+    )
+  }
 }
+
+// ========================================================================
+// Lifecycle
+// ========================================================================
+
+onMounted(() => {
+  loadSession()
+})
+
+onUnmounted(() => {
+  if (timerHandle) {
+    clearInterval(timerHandle)
+    timerHandle = null
+  }
+
+  if (copyTimerHandle) {
+    clearTimeout(copyTimerHandle)
+    copyTimerHandle = null
+  }
+})
 </script>
 
 <style scoped>
