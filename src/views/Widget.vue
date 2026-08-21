@@ -75,10 +75,7 @@
       <!-- Main checkout form -->
       <div v-else>
         <div class="summary">
-          <div class="row">
-            <span>Merchant</span>
-            <strong>{{ session.eventName }}</strong>
-          </div>
+       
           <div class="row">
             <span>Customer</span>
             <strong>{{ session.customerEmail }}</strong>
