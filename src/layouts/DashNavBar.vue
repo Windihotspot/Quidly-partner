@@ -67,7 +67,7 @@
         :style="dropdownStyle"
       >
         <a
-          href="https://wa.me/+2348084107354"
+          href="https://wa.me/+2348132822731"
           target="_blank"
           rel="noopener"
           class="support-option"
@@ -80,7 +80,7 @@
         </a>
 
         <a
-          href="mailto:support@getcredmate.co?subject=Support Request"
+          href="mailto:support@quidly.ng?subject=Support Request"
           class="support-option"
           @click="closeSupport"
         >

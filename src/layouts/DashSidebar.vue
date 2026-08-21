@@ -35,7 +35,7 @@
         <transition name="submenu">
           <div v-if="item.nav === 'support' && supportOpen" class="support-submenu">
             <a
-              href="https://wa.me/+2349132378328"
+              href="https://wa.me/+2348132822731"
               target="_blank"
               rel="noopener"
               class="submenu-item"
