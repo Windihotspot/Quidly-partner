@@ -1,6 +1,7 @@
 import '@/scss/style.scss'
 
 import { createApp } from 'vue'
+import { PDFPlugin } from 'vue3-pdfmake';
 import { createPinia } from 'pinia'
 import piniaPluginPersistedstate from 'pinia-plugin-persistedstate'
 
@@ -46,6 +47,7 @@ app.use(router)
 app.use(vuetify)
 app.use(VueApexCharts)
 app.use(ElementPlus);
+app.use(PDFPlugin);
 
 const urlParams = new URLSearchParams(window.location.search)
 const redirectPath = urlParams.get('redirect')
