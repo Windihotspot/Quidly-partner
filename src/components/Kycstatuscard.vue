@@ -46,7 +46,7 @@ import {
   CheckCircleIcon,
   ClockIcon,
   DocumentIcon,
-  ExclamationIcon,
+  ExclamationTriangleIcon,
   XCircleIcon,
 } from '@heroicons/vue/24/outline'
 
@@ -115,7 +115,7 @@ const statusIcons = {
   not_started: DocumentIcon,
   submitted: ClockIcon,
   under_review: ClockIcon,
-  resubmission_required: ExclamationIcon,
+  resubmission_required: ExclamationTriangleIcon,
   approved: CheckCircleIcon,
   rejected: XCircleIcon,
   suspended: XCircleIcon,

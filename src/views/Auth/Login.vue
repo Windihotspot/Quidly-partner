@@ -155,42 +155,35 @@
 </template>
 
 <script setup lang="ts">
-import { ref, reactive } from 'vue'
+import { ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/authStore'
 
 const router = useRouter()
-const auth = useAuthStore()
+const authStore = useAuthStore()
 
-const form = reactive({ email: '', password: '', remember: true })
-const loading = ref(false)
-const errorMsg = ref('')
-const formRef = ref(null)
+const email = ref('')
+const password = ref('')
+const showPassword = ref(false)
+const form = ref()
 
-const rules = {
-  required: (v: any) => !!v || 'This field is required.',
-  email: (v: string) => /.+@.+\..+/.test(v) || 'Enter a valid email address.',
-}
+const emailRules = [
+  (v: string) => !!v || 'Email is required',
+  (v: string) => /.+@.+\..+/.test(v) || 'Enter a valid email',
+]
 
-async function handleSubmit() {
-  errorMsg.value = ''
-  const { valid } = await (formRef.value as any).validate()
+const passwordRules = [(v: string) => !!v || 'Password is required']
+
+async function handleLogin() {
+  const { valid } = await form.value.validate()
   if (!valid) return
 
-  loading.value = true
   try {
-    await auth.login(form)
-    router.push({ name: 'dashboard' })
-  } catch (err: any) {
-    errorMsg.value = err.message || 'Login failed. Please try again.'
-  } finally {
-    loading.value = false
+    await authStore.login(email.value, password.value)
+    router.push('/dashboard') // adjust to your actual post-login route
+  } catch {
+    // authStore.error is already set and shown via the v-alert
   }
-}
-
-function fillDemo() {
-  form.email = 'demo@quidly.dev'
-  form.password = 'demo1234'
 }
 </script>
 

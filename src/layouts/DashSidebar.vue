@@ -14,46 +14,7 @@
         {{ item.label }}
       </li>
 
-      <!-- Account & Support Items -->
-      <template v-for="item in accountItems" :key="item.nav">
-        <li
-          :class="{ active: isActive(item), 'support-open': item.nav === 'support' && supportOpen }"
-          @click="navigateTo(item)"
-        >
-          <span class="icon-badge">
-            <i :class="item.icon"></i>
-          </span>
-          {{ item.label }}
-          <i
-            v-if="item.nav === 'support'"
-            class="mdi mdi-chevron-down support-chevron"
-            :class="{ rotated: supportOpen }"
-          ></i>
-        </li>
-
-        <!-- Support Submenu -->
-        <transition name="submenu">
-          <div v-if="item.nav === 'support' && supportOpen" class="support-submenu">
-            <a
-              href="https://wa.me/+2349132378328"
-              target="_blank"
-              rel="noopener"
-              class="submenu-item"
-            >
-              <span class="submenu-icon wa-icon">
-                <i class="mdi mdi-whatsapp"></i>
-              </span>
-              WhatsApp
-            </a>
-            <a href="mailto:support@quidly.ng?subject=Support Request" class="submenu-item">
-              <span class="submenu-icon mail-icon">
-                <i class="mdi mdi-email-outline"></i>
-              </span>
-              Email
-            </a>
-          </div>
-        </transition>
-      </template>
+      
 
       <!-- Divider -->
       <div class="menu-divider"></div>
@@ -97,21 +58,7 @@ const menuItems = [
     to: '/events',
     bg: '#fff3e0'
   },
-  {
-    nav: 'api-keys',
-    label: 'API Keys',
-    icon: 'mdi mdi-key-outline',
-    to: '/api-keys',
-    bg: '#f0e6ff'
-  },
- 
-  {
-    nav: 'webhooks',
-    label: 'Webhooks',
-    icon: 'mdi mdi-webhook',
-    to: '/webhooks',
-    bg: '#e8f5e9'
-  },
+
   {
     nav: 'settlements',
     label: 'Settlements',
@@ -120,19 +67,13 @@ const menuItems = [
     bg: '#fce4ec'
   },
   {
-  nav: 'kyc',
-  label: 'Kyc',
-  icon: 'mdi mdi-account-check',
-  to: '/kyc',
-  bg: '#fce4ec'
-},
-  {
     nav: 'settings',
     label: 'Settings',
     icon: 'mdi mdi-cog-outline',
     to: '/settings',
     bg: '#f5f5f5'
-  }
+  },
+
 ]
 
 const accountItems = [

@@ -1,78 +1,95 @@
 // src/stores/authStore.js
 import { defineStore } from 'pinia'
-import { DEMO_PARTNER, DEMO_PASSWORD, simulateDelay } from '@/lib/mockData'
+import { supabase } from '@/services/supabase'
+import ApiService from '@/services/api'
 
 const SESSION_KEY = 'quidly_partner_session'
-const PARTNERS_KEY = 'quidly_registered_partners'
-
-function readPartners() {
-  const raw = localStorage.getItem(PARTNERS_KEY)
-  return raw ? JSON.parse(raw) : [{ ...DEMO_PARTNER, password: DEMO_PASSWORD }]
-}
-
-function writePartners(list) {
-  localStorage.setItem(PARTNERS_KEY, JSON.stringify(list))
-}
 
 export const useAuthStore = defineStore('auth', {
   state: () => ({
     partner: JSON.parse(localStorage.getItem(SESSION_KEY) || 'null'),
-    environment: 'sandbox', // sandbox | live
+    loading: false,
+    error: null,
   }),
+
   getters: {
     isAuthenticated: (state) => !!state.partner,
   },
+
   actions: {
+    async login(email, password) {
+      this.loading = true
+      this.error = null
+      try {
+        const { data, error } = await supabase.auth.signInWithPassword({
+          email: email.trim().toLowerCase(),
+          password,
+        })
+        if (error) throw error
+        if (!data.user) throw new Error('Login failed.')
+
+        const { data: partner, error: partnerError } = await supabase
+          .from('partners')
+          .select('*')
+          .eq('auth_user_id', data.user.id)
+          .single()
+
+        if (partnerError || !partner) {
+          throw new Error('Could not load your partner profile.')
+        }
+
+        this.partner = partner
+        localStorage.setItem(SESSION_KEY, JSON.stringify(partner))
+        return partner
+      } catch (err) {
+        this.error = err.message || 'Incorrect email or password.'
+        throw err
+      } finally {
+        this.loading = false
+      }
+    },
+
     async register(form) {
-      await simulateDelay(1100)
-      const partners = readPartners()
-
-      if (partners.some((p) => p.email.toLowerCase() === form.email.toLowerCase())) {
-        throw new Error('An account with this email already exists.')
+      this.loading = true
+      this.error = null
+      try {
+        const result = await ApiService.post('/swift-function', {
+          businessName: form.businessName,
+          contactName: form.contactName,
+          email: form.email,
+          phone: form.phone,
+          businessType: form.businessType,
+          password: form.password,
+        })
+        return result
+      } catch (err) {
+        this.error = err.response?.data?.error || err.message || 'Registration failed.'
+        throw err
+      } finally {
+        this.loading = false
       }
-
-      const newPartner = {
-        id: `ptn_${Date.now()}`,
-        companyName: form.companyName,
-        contactName: form.contactName,
-        email: form.email,
-        phone: form.phone,
-        businessType: form.businessType,
-        password: form.password,
-        createdAt: new Date().toISOString(),
-      }
-
-      partners.push(newPartner)
-      writePartners(partners)
-
-      const { password, ...safePartner } = newPartner
-      this.partner = safePartner
-      localStorage.setItem(SESSION_KEY, JSON.stringify(safePartner))
-      return safePartner
     },
 
-    async login({ email, password }) {
-      await simulateDelay(900)
-      const partners = readPartners()
-      const found = partners.find((p) => p.email.toLowerCase() === email.toLowerCase())
-
-      if (!found || found.password !== password) {
-        throw new Error('Incorrect email or password.')
-      }
-
-      const { password: _pw, ...safePartner } = found
-      this.partner = safePartner
-      localStorage.setItem(SESSION_KEY, JSON.stringify(safePartner))
-      return safePartner
-    },
-
-    logout() {
+    async logout() {
+      await supabase.auth.signOut()
       this.partner = null
       localStorage.removeItem(SESSION_KEY)
     },
 
-    setEnvironment(env) {
-      this.environment = env
+    async fetchSession() {
+      const { data } = await supabase.auth.getSession()
+      if (!data.session) return
+
+      const { data: partner } = await supabase
+        .from('partners')
+        .select('*')
+        .eq('auth_user_id', data.session.user.id)
+        .single()
+
+      if (partner) {
+        this.partner = partner
+        localStorage.setItem(SESSION_KEY, JSON.stringify(partner))
+      }
     },
   },
 })
