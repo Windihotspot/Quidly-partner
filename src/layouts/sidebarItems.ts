@@ -11,8 +11,8 @@ const sidebarItems = [
     section: 'DEVELOPERS',
     roles: ['partner', 'admin'],
     items: [
-      { nav: 'widget', label: 'Payment Widget', icon: 'mdi mdi-puzzle-outline', to: '/widget' },
       { nav: 'api-keys', label: 'API Keys', icon: 'mdi mdi-key-outline', to: '/api-keys' },
+      { nav: 'widget', label: 'Payment Widget', icon: 'mdi mdi-puzzle-outline', to: '/widget' },
       { nav: 'webhooks', label: 'Webhooks', icon: 'mdi mdi-webhook', to: '/webhooks' },
     ],
   },
