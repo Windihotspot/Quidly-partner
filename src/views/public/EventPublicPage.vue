@@ -154,7 +154,39 @@ const returnedRef = computed(() => route.query.reference || route.query.trxref |
 .wrap { max-width: 1080px; margin: 0 auto; padding: 28px 20px 40px; }
 .banner { background: #ecfdf5; color: #065f46; border-radius: 12px; padding: 12px 16px; font-size: 14px; margin-bottom: 22px; display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
 .banner code { font-family: monospace; background: rgba(0,0,0,.06); padding: 2px 6px; border-radius: 6px; }
-.hero { display: grid; grid-template-columns: 360px 1fr; gap: 36px; margin-bottom: 36px; }
+.hero {
+  display: grid;
+  grid-template-columns: minmax(220px, 300px) minmax(0, 1fr);
+  gap: 32px;
+  align-items: start;
+  margin-bottom: 36px;
+}
+
+.poster {
+  width: 100%;
+  max-width: 300px;
+  aspect-ratio: 4 / 5;
+  border-radius: 18px;
+  overflow: hidden;
+  background: var(--card);
+  border: 1px solid var(--line);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 48px;
+  color: var(--muted);
+}
+
+.poster img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.hero__info {
+  min-width: 0;
+}
 .poster { aspect-ratio: 4 / 5; border-radius: 20px; overflow: hidden; background: var(--card); border: 1px solid var(--line); display: flex; align-items: center; justify-content: center; font-size: 56px; color: var(--muted); }
 .poster img { width: 100%; height: 100%; object-fit: cover; }
 .cats { font-size: 12px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: var(--accent); margin-bottom: 8px; }

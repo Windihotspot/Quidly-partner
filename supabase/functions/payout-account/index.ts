@@ -59,7 +59,7 @@ Deno.serve(handle(async (req, cors) => {
 
   // Mock mode skips the gateway and uses the logged-in user's email as the account name
   const resolved = MOCK_RESOLVE
-    ? { account_name: user.email ?? partner.email, account_number: accountNumber }
+    ? { account_name: partner.contact_name, account_number: accountNumber }
     : await resolveAccount(bank.code, accountNumber)
 
   if (action === 'resolve') return reply(cors, { account_name: resolved.account_name, bank_name: bank.name })
