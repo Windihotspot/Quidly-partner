@@ -57,7 +57,7 @@ const router = createRouter({
 },
 { path: '/webhooks', name: 'webhooks', component: () => import('@/views/WebhooksPage.vue'), meta: { requiresAuth: true } },
 { path: '/settlements', name: 'settlements', component: () => import('@/views/SettlementsPage.vue'), meta: { requiresAuth: true } },
-{ path: '/settings', name: 'settings', component: () => import('@/views/Settings.vue'), meta: { requiresAuth: true } },
+{ path: '/settings', name: 'settings', component: () => import('@/views/settings/PartnersettingsPage.vue'), meta: { requiresAuth: true } },
     
   ]
 })
