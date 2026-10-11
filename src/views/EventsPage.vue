@@ -90,11 +90,11 @@ function ticketsSummary(event) {
 
 <template>
   <MainLayout title="Events" subtitle="Create events and manage the ticket types partners can sell.">
-    <div class="flex justify-end mb-6">
+    <div class="flex justify-end m-6">
       <v-btn class="create-btn" prepend-icon="mdi-plus" @click="openCreate">Create event</v-btn>
     </div>
 
-    <div class="grid gap-4">
+    <div class="grid gap-4 m-4">
       <div v-for="event in events" :key="event.id" class="event-card">
         <div class="flex items-center gap-4">
           <span class="icon-badge" style="background: #fff3e0">
