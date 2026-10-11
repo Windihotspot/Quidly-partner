@@ -32,7 +32,7 @@ async function downloadReport(settlement) {
 </script>
 
 <template>
-  <MainLayout title="Settlements" subtitle="Track payouts, platform fees, and refunds.">
+  <MainLayout class="m-4" title="Settlements" subtitle="Track payouts, platform fees, and refunds.">
     <div class="grid grid-cols-3 gap-4 mb-6">
       <div class="summary-card">
         <p class="font-mono text-[10px] uppercase tracking-widest summary-label">Gross volume</p>

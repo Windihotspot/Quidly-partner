@@ -86,6 +86,7 @@ async function handleAdd() {
 <template>
   <MainLayout
     title="Webhooks"
+    class="m-4"
     subtitle="Get notified the moment a payment or ticket status changes."
   >
     <!-- ADD BUTTON -->

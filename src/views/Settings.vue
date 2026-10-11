@@ -46,7 +46,7 @@ async function confirmDeactivate() {
 </script>
 
 <template>
-  <MainLayout title="Settings" subtitle="Manage your partner profile and account security.">
+  <MainLayout class="m-4" title="Settings" subtitle="Manage your partner profile and account security.">
     <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 items-start">
       <!-- Profile -->
       <div class="settings-card">

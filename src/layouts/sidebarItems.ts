@@ -7,6 +7,13 @@ const sidebarItems = [
       { nav: 'events', label: 'Events', icon: 'mdi mdi-calendar-outline', to: '/events' },
     ],
   },
+   {
+    section: 'FINANCE',
+    roles: ['partner', 'admin'],
+    items: [
+      { nav: 'settlements', label: 'Settlements', icon: 'mdi mdi-bank-transfer', to: '/settlements' },
+    ],
+  },
   {
     section: 'DEVELOPERS',
     roles: ['partner', 'admin'],
@@ -16,13 +23,7 @@ const sidebarItems = [
       { nav: 'webhooks', label: 'Webhooks', icon: 'mdi mdi-webhook', to: '/webhooks' },
     ],
   },
-  {
-    section: 'FINANCE',
-    roles: ['partner', 'admin'],
-    items: [
-      { nav: 'settlements', label: 'Settlements', icon: 'mdi mdi-bank-transfer', to: '/settlements' },
-    ],
-  },
+ 
   {
     section: 'ACCOUNT',
     roles: ['partner', 'admin'],
