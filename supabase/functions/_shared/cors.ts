@@ -2,10 +2,9 @@ const allowedOrigins = [
   'http://localhost:3001',
   'http://127.0.0.1:3001',
 
-  'http://wealthoceanstech.com',
-  'http://www.wealthoceanstech.com',
-  'https://wealthoceanstech.com',
-  'https://www.wealthoceanstech.com',
+  'https://quidly-partner.vercel.app',
+  'http://quidly-partner.vercel.app',
+   
 ]
 
 export function getCorsHeaders(req: Request): Record<string, string> {

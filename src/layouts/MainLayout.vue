@@ -21,7 +21,7 @@ const { mdAndUp } = useDisplay()
       elevation="0"
       class="side-bar"
     >
-      <SidebarView @navigate="drawer = false" />
+      <SidebarView @navigate="!mdAndUp && (drawer = false)" />
     </v-navigation-drawer>
 
     <!-- Header -->

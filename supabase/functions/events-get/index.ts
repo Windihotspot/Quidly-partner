@@ -18,10 +18,43 @@ Deno.serve(handle(async (req, cors) => {
 
   const { data, error } = await admin
     .from('events')
-    .select('id, event_name, status, slug, starts_at, ends_at, banner_url, format, created_at')
+    .select('id, event_name, status, location, slug, starts_at, ends_at, banner_url, format, created_at')
     .eq('partner_id', partner.id)
     .order('created_at', { ascending: false })
     .limit(100)
+
   if (error) throw error
-  return reply(cors, { events: (data ?? []).map((e) => ({ ...e, event_url: eventUrl(e.slug) })) })
+
+  const events = data ?? []
+
+  if (events.length === 0) {
+    return reply(cors, { events: [] })
+  }
+
+  const eventIds = events.map((event) => event.id)
+
+  const { data: ticketTypes, error: ticketTypesError } = await admin
+    .from('ticket_types')
+    .select('*')
+    .in('event_id', eventIds)
+    .order('sort_order', { ascending: true })
+
+  if (ticketTypesError) throw ticketTypesError
+
+  const ticketTypesByEvent = new Map<string, typeof ticketTypes>()
+
+  for (const ticket of ticketTypes ?? []) {
+    const existing = ticketTypesByEvent.get(ticket.event_id) ?? []
+    existing.push(ticket)
+    ticketTypesByEvent.set(ticket.event_id, existing)
+  }
+
+  return reply(cors, {
+    events: events.map((event) => ({
+      ...event,
+      event_url: eventUrl(event.slug),
+      ticket_types: ticketTypesByEvent.get(event.id) ?? [],
+    })),
+  })
+
 }))

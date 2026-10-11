@@ -173,9 +173,36 @@ function runStep(step) {
         </div>
       </div>
 
-      <div class="content-grid">
+      <div class="">
+          <!-- Upcoming events -->
+          <div class="side-card">
+            <div class="card-header card-header--tight">
+              <h2 class="card-title card-title--sm">Upcoming events</h2>
+              <RouterLink to="/events" class="view-link">All <i class="mdi mdi-arrow-right"></i></RouterLink>
+            </div>
+            <div v-if="loading && !data" class="empty empty--sm"><v-progress-circular indeterminate color="#2b7fff" size="22" /></div>
+            <div v-else-if="!data?.upcoming_events.length" class="empty empty--sm">
+              <p>No live upcoming events.</p>
+              <RouterLink :to="{ name: 'event-new' }" class="q-link text-sm">Create one</RouterLink>
+            </div>
+            <ul v-else class="ev-list">
+              <li v-for="e in data.upcoming_events" :key="e.id">
+                <button type="button" class="ev-row" @click="router.push({ name: 'event-edit', params: { id: e.id, step: 'details' } })">
+                  <span class="ev-thumb">
+                    <img v-if="e.banner_url" :src="e.banner_url" alt="" />
+                    <i v-else class="mdi mdi-calendar-outline"></i>
+                  </span>
+                  <span class="min-w-0 flex-1 text-left">
+                    <span class="block text-sm font-semibold trunc">{{ e.event_name }}</span>
+                    <span class="block q-help">{{ formatShortDate(e.starts_at, e.timezone) }} · {{ soldLabel(e) }}</span>
+                    <span v-if="pct(e) !== null" class="bar"><span :style="{ width: pct(e) + '%' }"></span></span>
+                  </span>
+                </button>
+              </li>
+            </ul>
+          </div>
         <!-- Recent orders -->
-        <div class="orders-card">
+        <div class="orders-card mt-6">
           <div class="card-header">
             <h2 class="card-title">Recent Orders</h2>
           </div>
@@ -210,62 +237,9 @@ function runStep(step) {
             </table>
           </div>
         </div>
+      
 
-        <div class="side-col">
-          <!-- Upcoming events -->
-          <div class="side-card">
-            <div class="card-header card-header--tight">
-              <h2 class="card-title card-title--sm">Upcoming events</h2>
-              <RouterLink to="/events" class="view-link">All <i class="mdi mdi-arrow-right"></i></RouterLink>
-            </div>
-            <div v-if="loading && !data" class="empty empty--sm"><v-progress-circular indeterminate color="#2b7fff" size="22" /></div>
-            <div v-else-if="!data?.upcoming_events.length" class="empty empty--sm">
-              <p>No live upcoming events.</p>
-              <RouterLink :to="{ name: 'event-new' }" class="q-link text-sm">Create one</RouterLink>
-            </div>
-            <ul v-else class="ev-list">
-              <li v-for="e in data.upcoming_events" :key="e.id">
-                <button type="button" class="ev-row" @click="router.push({ name: 'event-edit', params: { id: e.id, step: 'details' } })">
-                  <span class="ev-thumb">
-                    <img v-if="e.banner_url" :src="e.banner_url" alt="" />
-                    <i v-else class="mdi mdi-calendar-outline"></i>
-                  </span>
-                  <span class="min-w-0 flex-1 text-left">
-                    <span class="block text-sm font-semibold trunc">{{ e.event_name }}</span>
-                    <span class="block q-help">{{ formatShortDate(e.starts_at, e.timezone) }} · {{ soldLabel(e) }}</span>
-                    <span v-if="pct(e) !== null" class="bar"><span :style="{ width: pct(e) + '%' }"></span></span>
-                  </span>
-                </button>
-              </li>
-            </ul>
-          </div>
-
-          <!-- API keys -->
-          <!-- <div class="api-card">
-            <div class="api-header">
-              <p class="api-label">API Keys</p>
-              <div class="api-badge"><i class="mdi mdi-key-outline"></i></div>
-            </div>
-
-            <div v-if="loading && !data" class="api-empty"><v-progress-circular indeterminate color="white" size="22" /></div>
-            <template v-else-if="data?.api_keys.length">
-              <div v-for="k in data.api_keys" :key="k.id" class="api-key-container">
-                <div class="flex items-center justify-between mb-1">
-                  <span class="env" :class="{ 'env--live': k.environment === 'live' }">{{ k.environment }}</span>
-                  <span class="used">{{ timeAgo(k.last_used_at) }}</span>
-                </div>
-                <code class="api-key">{{ k.key_prefix }}••••••••••••</code>
-              </div>
-              <p class="api-note">Full keys are shown once, when created.</p>
-            </template>
-            <p v-else class="api-empty">No active API keys yet.</p>
-
-            <RouterLink to="/api-keys" class="manage-link">
-              <i class="mdi mdi-arrow-right"></i>
-              {{ data?.api_keys.length ? 'Manage all keys' : 'Create an API key' }}
-            </RouterLink>
-          </div> -->
-        </div>
+       
       </div>
     </div>
 

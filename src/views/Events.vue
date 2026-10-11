@@ -39,7 +39,7 @@ const chipLabel = (t) =>
   `${t.name} · ${t.is_free ? 'Free' : formatNaira(t.price)} · ${t.quantity_sold}/${t.quantity ?? '∞'} sold`
 
 function venueLine(e) {
-  const where = e.format === 'online' ? 'Online' : e.venue_name || e.address || 'No venue yet'
+  const where = e.format === 'online' ? 'Online' : e.location || 'No venue yet'
   return `${where} · ${formatShortDate(e.starts_at)}`
 }
 
@@ -111,7 +111,7 @@ async function doDelete() {
             <p class="text-sm event-meta mt-1">{{ venueLine(event) }}</p>
             <div class="flex gap-2 mt-3 flex-wrap">
               <span v-for="tt in event.ticket_types" :key="tt.id" class="ticket-chip">{{ chipLabel(tt) }}</span>
-              <span v-if="!event.ticket_types?.length" class="ticket-chip">No tickets yet</span>
+              <span v-if="!event.ticket_types?.length" class="ticket-chip">No tickets created for this event yet</span>
             </div>
           </div>
         </div>
@@ -170,5 +170,5 @@ async function doDelete() {
 .event-name { color: #2b3e50; }
 .event-meta { color: #6b7280; }
 .status-pill { font-size: 11px; padding: 2px 10px; border-radius: 999px; font-weight: 600; text-transform: capitalize; }
-.ticket-chip { font-family: monospace; font-size: 11px; color: #4b5563; background: #f8f9fa; padding: 4px 10px; border-radius: 8px; }
+.ticket-chip { font-family: monospace; font-size: 11px; color: white; background: #629ffa; padding: 4px 10px; border-radius: 8px; }
 </style>

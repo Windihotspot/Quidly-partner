@@ -24,7 +24,7 @@ export async function requirePartner(req: Request) {
   const admin = getAdminClient()
   const { data, error } = await admin
     .from('partners')
-    .select('id, business_name, email, status, kyc_status, webhook_url')
+    .select('id, business_name, contact_name, email, status, kyc_status, webhook_url')
     .eq('auth_user_id', user.id)
     .maybeSingle()
 
