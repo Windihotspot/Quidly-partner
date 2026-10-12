@@ -40,7 +40,7 @@ const err = (f) => (errField.value === f ? error.value : '')
     <div class="grid sm:grid-cols-2 gap-x-4">
       <v-text-field v-model="form.business_name" label="Business name" variant="outlined" density="comfortable" color="#2b7fff" maxlength="120" :error-messages="err('business_name')" />
       <v-text-field v-model="form.contact_name" label="Contact name" variant="outlined" density="comfortable" color="#2b7fff" maxlength="120" :error-messages="err('contact_name')" />
-      <v-text-field :model-value="state.profile.email" label="Email" variant="outlined" density="comfortable" disabled hint="Your sign-in email. Contact support to change it." persistent-hint />
+      <v-text-field :model-value="state.profile.email" label="Email" variant="outlined" density="comfortable" disabled />
       <v-text-field v-model="form.phone" label="Phone" variant="outlined" density="comfortable" color="#2b7fff" placeholder="08012345678" :error-messages="err('phone')" />
       <v-text-field v-model="form.website" label="Website" variant="outlined" density="comfortable" color="#2b7fff" placeholder="https://" :error-messages="err('website')" />
       <v-text-field :model-value="state.profile.country" label="Country" variant="outlined" density="comfortable" disabled />

@@ -175,8 +175,7 @@ async function handleLogin() {
             :loading="authStore.loading"
             :disabled="authStore.loading"
             elevation="0"
-            data-aos="fade-up"
-            data-aos-delay="200"
+           
           >
             <span>Sign in to your account</span>
 
