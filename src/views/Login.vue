@@ -1,4 +1,3 @@
-
 <script setup lang="ts">
 import { ref, onMounted, onBeforeUnmount } from 'vue'
 import { useRouter } from 'vue-router'
@@ -16,14 +15,10 @@ const form = ref()
 
 const emailRules = [
   (v: string) => !!v?.trim() || 'Email address is required',
-  (v: string) =>
-    /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v) ||
-    'Enter a valid email address',
+  (v: string) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v) || 'Enter a valid email address'
 ]
 
-const passwordRules = [
-  (v: string) => !!v || 'Password is required',
-]
+const passwordRules = [(v: string) => !!v || 'Password is required']
 
 onMounted(() => {
   AOS.init({
@@ -31,7 +26,7 @@ onMounted(() => {
     easing: 'ease-out-cubic',
     once: true,
     offset: 35,
-    delay: 50,
+    delay: 50
   })
 })
 
@@ -47,7 +42,9 @@ async function handleLogin() {
 
   try {
     await authStore.login(email.value.trim(), password.value)
-    await router.push('/dashboard')
+    const redirect = router.currentRoute.value.query.redirect
+
+    router.replace(typeof redirect === 'string' ? redirect : '/dashboard')
   } catch {
     // The auth store handles the login error.
   }
@@ -60,27 +57,12 @@ async function handleLogin() {
     <section class="login-panel">
       <div class="login-content">
         <header class="" data-aos="fade-down">
-          <router-link
-            to="/"
-            class=""
-            aria-label="Quidly home"
-          >
-             <img
-          src="@/assets/quidly-logo.png"
-          alt="Quidly logo"
-          class="w-20"
-        />
-
+          <router-link to="/" class="" aria-label="Quidly home">
+            <img src="@/assets/quidly-logo.png" alt="Quidly logo" class="w-20" />
           </router-link>
-
-          
         </header>
 
-        <div
-          class="form-heading"
-          data-aos="fade-up"
-          data-aos-delay="80"
-        >
+        <div class="form-heading" data-aos="fade-up" data-aos-delay="80">
           <div class="eyebrow">
             <span class="eyebrow-dot"></span>
             PARTNER PORTAL
@@ -88,21 +70,12 @@ async function handleLogin() {
 
           <h1>Welcome back.</h1>
 
-          <p>
-            Sign in to manage your events, monitor ticket sales,
-            and keep your business moving.
-          </p>
+          <p>Sign in to manage your events, monitor ticket sales, and keep your business moving.</p>
         </div>
 
-        <v-form
-          ref="form"
-          class="login-form"
-          @submit.prevent="handleLogin"
-        >
+        <v-form ref="form" class="login-form" @submit.prevent="handleLogin">
           <div class="field-group" data-aos="fade-up" data-aos-delay="100">
-            <label for="login-email" class="field-label">
-              Email address
-            </label>
+            <label for="login-email" class="field-label"> Email address </label>
 
             <v-text-field
               id="login-email"
@@ -119,20 +92,11 @@ async function handleLogin() {
             />
           </div>
 
-          <div
-            class="field-group password-group"
-            data-aos="fade-up"
-            data-aos-delay="160"
-          >
+          <div class="field-group password-group" data-aos="fade-up" data-aos-delay="160">
             <div class="password-label-row">
-              <label for="login-password" class="field-label">
-                Password
-              </label>
+              <label for="login-password" class="field-label"> Password </label>
 
-              <router-link
-                to="/forgot-password"
-                class="forgot-link"
-              >
+              <router-link to="/forgot-password" class="forgot-link">
                 Forgot password?
               </router-link>
             </div>
@@ -143,9 +107,7 @@ async function handleLogin() {
               :type="showPassword ? 'text' : 'password'"
               placeholder="Enter your password"
               prepend-inner-icon="mdi-lock-outline"
-              :append-inner-icon="
-                showPassword ? 'mdi-eye-off-outline' : 'mdi-eye-outline'
-              "
+              :append-inner-icon="showPassword ? 'mdi-eye-off-outline' : 'mdi-eye-outline'"
               variant="outlined"
               density="comfortable"
               :rules="passwordRules"
@@ -175,7 +137,6 @@ async function handleLogin() {
             :loading="authStore.loading"
             :disabled="authStore.loading"
             elevation="0"
-           
           >
             <span>Sign in to your account</span>
 
@@ -210,8 +171,6 @@ async function handleLogin() {
       <div class="hero-background-shape shape-two"></div>
 
       <header class="hero-topbar" data-aos="fade-down">
-        
-
         <div class="secure-indicator">
           <span></span>
           Your business, in one place
@@ -230,16 +189,11 @@ async function handleLogin() {
         </h2>
 
         <p>
-          Your events, ticket sales, transactions, and business insights
-          are just a sign-in away.
+          Your events, ticket sales, transactions, and business insights are just a sign-in away.
         </p>
       </div>
 
-      <div
-        class="hero-illustration"
-        data-aos="zoom-in"
-        data-aos-delay="180"
-      >
+      <div class="hero-illustration" data-aos="zoom-in" data-aos-delay="180">
         <img
           src="@/assets/events-ticketing.png"
           alt="Event management, digital ticketing, secure payments and sales analytics on Quidly"
