@@ -1,6 +1,7 @@
 <script setup>
-import { ref, reactive, computed } from 'vue'
+import { ref, reactive, computed, watch } from 'vue'
 import { publicEventService } from '@/services/publicEventService'
+import { runCheckout } from '@/lib/quidlyPay'
 import { formatNaira } from '@/lib/eventHelpers'
 
 const props = defineProps({
@@ -18,7 +19,10 @@ const buyer = reactive({ name: '', email: '', phone: '' })
 const errors = reactive({})
 const submitting = ref(false)
 const error = ref('')
-const done = ref(null) // free orders complete immediately
+const notice = ref('')
+const done = ref(null) // completed order (free, or paid and verified)
+const waiting = ref(null) // paid but still confirming / needs review: the form stays locked so nobody pays twice
+const created = ref(null) // open paid order, reused if the customer closes the widget and comes back
 const sessionId = crypto.randomUUID()
 
 const selected = computed(() => props.tickets.find((t) => t.id === selectedId.value) ?? null)
@@ -28,6 +32,16 @@ const allSoldOut = computed(() => props.tickets.length > 0 && props.tickets.ever
 const maxFor = (t) => Math.min(t.max_per_order, t.remaining ?? t.max_per_order)
 const qtyFor = (t) => (selectedId.value === t.id ? qty.value : 0)
 const priceLabel = (t) => (t.is_free ? 'Free' : formatNaira(t.price))
+
+// a held order only matches the exact selection it was created for
+watch([selectedId, qty, () => buyer.email, () => buyer.name], () => { created.value = null })
+
+const holdActive = () => created.value && new Date(created.value.expires_at).getTime() > Date.now() + 30_000
+const ctaLabel = computed(() => {
+  if (submitting.value) return 'Please wait…'
+  if (holdActive()) return 'Continue payment'
+  return total.value === 0 ? 'Get free ticket' : `Pay ${formatNaira(total.value)}`
+})
 
 function step(t, delta) {
   if (selectedId.value !== t.id) {
@@ -46,27 +60,50 @@ function validate() {
   return Object.keys(errors).length === 0
 }
 
+async function pay() {
+  const order = created.value
+  const result = await runCheckout(order)
+  if (result.status === 'completed') {
+    done.value = result
+    created.value = null
+  } else if (result.status === 'cancelled') {
+    notice.value = 'Payment window closed. Your tickets are held for a few minutes. Tap Continue payment to finish.'
+  } else if (result.status === 'failed') {
+    created.value = null // a retry becomes a fresh order with a fresh reference
+    error.value = result.message || 'Your payment was not successful. Please try again.'
+  } else {
+    // pending | review: money may be in flight, so lock the form instead of letting them pay again
+    waiting.value = { reference: order.reference, message: result.message }
+    created.value = null
+  }
+}
+
 async function submit() {
   error.value = ''
+  notice.value = ''
   if (!selected.value || qty.value < 1) return
   if (!validate()) return
   submitting.value = true
   try {
-    const res = await publicEventService.createTransaction({
-      event_id: props.eventId,
-      ticket_type_id: selected.value.id,
-      quantity: qty.value,
-      customer: { name: buyer.name.trim(), email: buyer.email.trim(), phone: buyer.phone.trim() || undefined },
-      payment_method: 'card',
-      widget_session_id: sessionId,
-      callback_url: `${window.location.origin}/e/${props.slug}`,
-    })
-    if (res.status === 'completed') done.value = res
-    else if (res.authorization_url) window.location.assign(res.authorization_url)
-    else error.value = 'Could not start payment. Please try again.'
+    if (!holdActive()) {
+      const res = await publicEventService.createTransaction({
+        event_id: props.eventId,
+        ticket_type_id: selected.value.id,
+        quantity: qty.value,
+        customer: { name: buyer.name.trim(), email: buyer.email.trim(), phone: buyer.phone.trim() || undefined },
+        widget_session_id: sessionId,
+      })
+      if (res.status === 'completed') {
+        done.value = res // free orders complete immediately
+        return
+      }
+      if (!res.widget) throw new Error('Could not start payment. Please try again.')
+      created.value = res
+    }
+    await pay()
   } catch (e) {
     const msg = e?.response?.data?.error || e?.message || 'Something went wrong. Please try again.'
-    error.value = /not configured/i.test(msg) ? 'Card payments are not enabled yet. Please try again later.' : msg
+    error.value = /not configured/i.test(msg) ? 'Payments are not enabled yet. Please try again later.' : msg
   } finally {
     submitting.value = false
   }
@@ -75,7 +112,7 @@ async function submit() {
 
 <template>
   <div class="picker">
-    <!-- free order confirmation -->
+    <!-- order confirmation -->
     <div v-if="done" class="done">
       <i class="mdi mdi-check-circle"></i>
       <h3>You're in!</h3>
@@ -83,6 +120,16 @@ async function submit() {
       <code>{{ done.reference }}</code>
       <p class="mt-3">Your ticket{{ done.tickets.length > 1 ? 's' : '' }}</p>
       <code v-for="t in done.tickets" :key="t.id" class="block">{{ t.reference }}</code>
+    </div>
+
+    <!-- payment received but not confirmed yet -->
+    <div v-else-if="waiting" class="done">
+      <i class="mdi mdi-clock-check-outline waiting__icon"></i>
+      <h3>Confirming your payment</h3>
+      <p>{{ waiting.message }}</p>
+      <p class="mt-3">Order reference</p>
+      <code>{{ waiting.reference }}</code>
+      <p class="mt-3">Please do not pay again. Keep this reference if you need help.</p>
     </div>
 
     <template v-else>
@@ -124,10 +171,9 @@ async function submit() {
         <p v-if="errors.phone" class="err">{{ errors.phone }}</p>
 
         <div class="total"><span>{{ qty }} × {{ selected.name }}</span><strong>{{ total === 0 ? 'Free' : formatNaira(total) }}</strong></div>
+        <p v-if="notice" class="note">{{ notice }}</p>
         <p v-if="error" class="err err--box">{{ error }}</p>
-        <button type="submit" class="cta" :disabled="submitting">
-          {{ submitting ? 'Please wait…' : total === 0 ? 'Get free ticket' : `Pay ${formatNaira(total)}` }}
-        </button>
+        <button type="submit" class="cta" :disabled="submitting">{{ ctaLabel }}</button>
       </form>
     </template>
   </div>
@@ -160,11 +206,13 @@ async function submit() {
 .opt { opacity: .7; }
 .err { color: #dc2626; font-size: 12px; margin-top: -4px; }
 .err--box { background: #fef2f2; border-radius: 10px; padding: 10px 12px; margin: 4px 0; }
+.note { background: rgba(127,127,127,.12); border-radius: 10px; padding: 10px 12px; font-size: 13px; margin: 4px 0; }
 .total { display: flex; justify-content: space-between; margin-top: 8px; font-size: 14px; }
 .cta { margin-top: 6px; padding: 14px; border-radius: 12px; border: 0; background: var(--accent); color: var(--bg); font-weight: 700; font-size: 15px; cursor: pointer; }
 .cta:disabled { opacity: .6; cursor: wait; }
 .done { text-align: center; padding: 10px 0; }
 .done i { font-size: 46px; color: #059669; }
+.done .waiting__icon { color: #d97706; }
 .done h3 { font-size: 20px; font-weight: 700; margin: 6px 0 12px; }
 .done p { font-size: 13px; color: var(--muted); margin-bottom: 4px; }
 .done code { display: inline-block; font-family: monospace; font-size: 13px; background: rgba(127,127,127,.12); padding: 5px 10px; border-radius: 8px; margin: 2px; }

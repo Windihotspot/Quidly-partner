@@ -63,3 +63,27 @@ export async function deliver(url: string, secret: string, eventId: string, type
     return { ok: false, status: 0, ms: Date.now() - started, error: timeout ? 'Your server did not respond within 8 seconds' : 'We could not reach your server' }
   }
 }
+
+
+export async function queuePartnerWebhook(
+  admin: import('https://esm.sh/@supabase/supabase-js@2.45.4').SupabaseClient,
+  tx: { id: string; partner_id: string },
+  type: string,
+  data: unknown,
+) {
+  const { error } = await admin
+    .from('webhook_events')
+    .insert({
+      partner_id: tx.partner_id,
+      transaction_id: tx.id,
+      event_type: type,
+      payload: data,
+      delivery_status: 'pending',
+      retry_count: 0,
+    })
+
+  if (error) {
+    console.error('Failed to queue partner webhook:', error)
+    throw error
+  }
+}
