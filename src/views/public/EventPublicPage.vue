@@ -95,6 +95,7 @@ const returnedRef = computed(() => route.query.reference || route.query.trxref |
           <img v-if="event.banner_url" :src="event.banner_url" :alt="event.event_name" />
           <i v-else class="mdi mdi-image-outline"></i>
         </div>
+
         <div class="hero__info">
           <p v-if="event.categories?.length" class="cats">{{ event.categories.slice(0, 3).join(' · ') }}</p>
           <h1 class="title">{{ event.event_name }}</h1>
@@ -154,26 +155,28 @@ const returnedRef = computed(() => route.query.reference || route.query.trxref |
 .wrap { max-width: 1080px; margin: 0 auto; padding: 28px 20px 40px; }
 .banner { background: #ecfdf5; color: #065f46; border-radius: 12px; padding: 12px 16px; font-size: 14px; margin-bottom: 22px; display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
 .banner code { font-family: monospace; background: rgba(0,0,0,.06); padding: 2px 6px; border-radius: 6px; }
+
+/* Hero: stacked, banner centered, info underneath */
 .hero {
-  display: grid;
-  grid-template-columns: minmax(220px, 300px) minmax(0, 1fr);
-  gap: 32px;
-  align-items: start;
-  margin-bottom: 36px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 40px;
+  margin-bottom: 48px;
 }
 
 .poster {
   width: 100%;
-  max-width: 300px;
-  aspect-ratio: 4 / 5;
-  border-radius: 18px;
+  max-width: 640px;
+  aspect-ratio: 4 / 5; /* try 16 / 9 for landscape banners */
+  border-radius: 20px;
   overflow: hidden;
   background: var(--card);
   border: 1px solid var(--line);
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 48px;
+  font-size: 56px;
   color: var(--muted);
 }
 
@@ -185,10 +188,11 @@ const returnedRef = computed(() => route.query.reference || route.query.trxref |
 }
 
 .hero__info {
+  width: 100%;
+  max-width: 640px;
   min-width: 0;
 }
-.poster { aspect-ratio: 4 / 5; border-radius: 20px; overflow: hidden; background: var(--card); border: 1px solid var(--line); display: flex; align-items: center; justify-content: center; font-size: 56px; color: var(--muted); }
-.poster img { width: 100%; height: 100%; object-fit: cover; }
+
 .cats { font-size: 12px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: var(--accent); margin-bottom: 8px; }
 .title { font-size: 38px; line-height: 1.1; font-weight: 800; letter-spacing: -.02em; margin-bottom: 6px; }
 .row { display: flex; align-items: center; gap: 10px; margin-top: 14px; font-size: 15px; }
@@ -197,6 +201,7 @@ const returnedRef = computed(() => route.query.reference || route.query.trxref |
 .socials { display: flex; gap: 10px; margin-top: 22px; }
 .socials a { width: 38px; height: 38px; border-radius: 999px; border: 1px solid var(--line); display: flex; align-items: center; justify-content: center; color: inherit; font-size: 18px; }
 .socials a:hover { border-color: var(--accent); color: var(--accent); }
+
 .cols { display: grid; grid-template-columns: 1fr 380px; gap: 36px; align-items: start; }
 .right { position: sticky; top: 20px; }
 h2 { font-size: 20px; font-weight: 700; margin-bottom: 12px; }
@@ -213,9 +218,10 @@ h2 { font-size: 20px; font-weight: 700; margin-bottom: 12px; }
 .person img, .avatar { width: 72px; height: 72px; border-radius: 999px; object-fit: cover; }
 .avatar { display: flex; align-items: center; justify-content: center; background: var(--card); border: 1px solid var(--line); font-weight: 700; font-size: 22px; color: var(--accent); }
 .foot { text-align: center; margin-top: 48px; font-size: 12px; color: var(--muted); }
+
 @media (max-width: 860px) {
-  .hero { grid-template-columns: 1fr; gap: 22px; }
-  .poster { max-width: 320px; }
+  .hero { gap: 28px; margin-bottom: 36px; }
+  .poster { max-width: 100%; }
   .title { font-size: 30px; }
   .cols { grid-template-columns: 1fr; }
   .right { position: static; order: -1; }
