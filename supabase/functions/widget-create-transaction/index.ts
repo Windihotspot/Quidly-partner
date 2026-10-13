@@ -1,17 +1,16 @@
-// widget-create-transaction: called by the Quidly payment widget to start a purchase.
-// POST { event_id | slug, ticket_type_id, quantity, customer: { name, email, phone? },
-//        payment_method?: 'card'|'bank_transfer'|'ussd', widget_session_id?, callback_url? }
+// widget-create-transaction: called by the checkout page / partner widget to start a purchase.
+// POST { event_id | slug, ticket_type_id, quantity, customer: { name, email, phone? }, widget_session_id? }
 // Optional header: x-quidly-key (partner-embedded widget). No key = Quidly-hosted event page.
-// Deploy with --no-verify-jwt.
+// Paid orders return `widget` params for the inline Quidly Pay widget; the payment itself is
+// confirmed later by payment-confirm / quidly-pay-webhook. Deploy with --no-verify-jwt.
 import { handle, reply, readJson, requireMethod, HttpError } from '../_shared/http.ts'
 import { resolveApiKey } from '../_shared/auth.ts'
 import { getAdminClient } from '../_shared/supabaseAdmin.ts'
-import { initializeTransaction } from '../_shared/gateway.ts'
+import { widgetParams } from '../_shared/quidlyPay.ts' // replaces initializeTransaction() from gateway.ts
 import { queuePartnerWebhook } from '../_shared/webhooks.ts'
 
-const HOLD_MINUTES = 15
+const HOLD_MINUTES = 15 // keep >= the longest time a bank-transfer virtual account stays payable (ask Quidly Pay)
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
-const METHODS = ['card', 'bank_transfer', 'ussd'] as const
 
 Deno.serve(handle(async (req, cors) => {
   requireMethod(req, 'POST')
@@ -30,12 +29,6 @@ Deno.serve(handle(async (req, cors) => {
 
   const qty = Number(body.quantity ?? 1)
   if (!Number.isInteger(qty) || qty < 1) throw new HttpError(422, 'Invalid quantity')
-
-  const method = (body.payment_method ?? 'card') as (typeof METHODS)[number]
-  if (!METHODS.includes(method)) throw new HttpError(422, 'Unsupported payment method')
-
-  const callbackUrl = body.callback_url ? String(body.callback_url) : undefined
-  if (callbackUrl && !/^https?:\/\//i.test(callbackUrl)) throw new HttpError(422, 'Invalid callback_url')
 
   const ticketTypeId = String(body.ticket_type_id ?? '')
   if (!ticketTypeId) throw new HttpError(422, 'ticket_type_id is required')
@@ -85,7 +78,7 @@ Deno.serve(handle(async (req, cors) => {
       customer_phone: phone,
       amount,
       currency: 'NGN',
-      payment_method: method,
+      payment_method: 'card', // placeholder: the customer picks the channel in the widget; payment-confirm records the real one
       status: 'pending',
       quidly_widget_session_id: body.widget_session_id ? String(body.widget_session_id).slice(0, 100) : null,
       attempted_at: new Date().toISOString(),
@@ -106,7 +99,7 @@ Deno.serve(handle(async (req, cors) => {
     throw txErr ?? new Error('Could not create transaction')
   }
 
-  // ---- free tickets complete immediately -----------------------------------
+  // ---- free tickets complete immediately (unchanged) -----------------------
   if (amount === 0) {
     const { data: result, error } = await admin.rpc('complete_transaction', { p_reference: reference, p_gateway_ref: null })
     if (error || !result?.ok) {
@@ -120,18 +113,14 @@ Deno.serve(handle(async (req, cors) => {
     return reply(cors, { reference, status: 'completed', amount: 0, currency: 'NGN', tickets: result.tickets }, 201)
   }
 
-  // ---- paid: start gateway payment -----------------------------------------
+  // ---- paid: the inline widget takes over on the client ---------------------
   try {
-    const init = await initializeTransaction({
-      email, amount, reference, channel: method, callbackUrl,
-      metadata: { quidly_transaction_id: tx.id, event_id: event.id, ticket_type_id: ticket.id, quantity: qty },
-    })
     return reply(cors, {
       reference, status: 'pending', amount, currency: 'NGN', expires_at: expiresAt,
-      authorization_url: init.authorization_url, access_code: init.access_code,
+      widget: widgetParams({ reference, email, amountNaira: amount }),
     }, 201)
   } catch (e) {
-    await admin.rpc('fail_transaction', { p_reference: reference, p_reason: 'gateway_init_failed' })
+    await admin.rpc('fail_transaction', { p_reference: reference, p_reason: 'widget_config_error' })
     throw e
   }
 }, { widget: true }))

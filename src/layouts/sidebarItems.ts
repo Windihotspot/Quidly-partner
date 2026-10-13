@@ -14,15 +14,15 @@ const sidebarItems = [
       { nav: 'settlements', label: 'Settlements', icon: 'mdi mdi-bank-transfer', to: '/settlements' },
     ],
   },
-  {
-    section: 'DEVELOPERS',
-    roles: ['partner', 'admin'],
-    items: [
-      { nav: 'api-keys', label: 'API Keys', icon: 'mdi mdi-key-outline', to: '/api-keys' },
-      { nav: 'widget', label: 'Payment Widget', icon: 'mdi mdi-puzzle-outline', to: '/widget' },
-      { nav: 'webhooks', label: 'Webhooks', icon: 'mdi mdi-webhook', to: '/webhooks' },
-    ],
-  },
+  // {
+  //   section: 'DEVELOPERS',
+  //   roles: ['partner', 'admin'],
+  //   items: [
+  //     { nav: 'api-keys', label: 'API Keys', icon: 'mdi mdi-key-outline', to: '/api-keys' },
+  //     { nav: 'widget', label: 'Payment Widget', icon: 'mdi mdi-puzzle-outline', to: '/widget' },
+  //     { nav: 'webhooks', label: 'Webhooks', icon: 'mdi mdi-webhook', to: '/webhooks' },
+  //   ],
+  // },
  
   {
     section: 'ACCOUNT',
