@@ -108,7 +108,32 @@ async function doDelete() {
                 {{ event.status }}
               </span>
             </div>
-            <p class="text-sm event-meta mt-1">{{ venueLine(event) }}</p>
+            <p class="text-sm event-meta mt-1">
+  {{ venueLine(event) }}
+</p>
+
+<div v-if="event.event_url" class="event-url-row">
+  <a
+    :href="absoluteUrl(event.event_url)"
+    target="_blank"
+    rel="noopener noreferrer"
+    class="event-url"
+    :title="absoluteUrl(event.event_url)"
+  >
+    <i class="mdi mdi-link-variant"></i>
+    <span>{{ absoluteUrl(event.event_url) }}</span>
+  </a>
+
+  <button
+    type="button"
+    class="copy-url-btn"
+    title="Copy event URL"
+    aria-label="Copy event URL"
+    @click.stop="copyLink(event)"
+  >
+    <i class="mdi mdi-content-copy"></i>
+  </button>
+</div>
             <div class="flex gap-2 mt-3 flex-wrap">
               <span v-for="tt in event.ticket_types" :key="tt.id" class="ticket-chip">{{ chipLabel(tt) }}</span>
               <span v-if="!event.ticket_types?.length" class="ticket-chip">No tickets created for this event yet</span>
@@ -171,4 +196,72 @@ async function doDelete() {
 .event-meta { color: #6b7280; }
 .status-pill { font-size: 11px; padding: 2px 10px; border-radius: 999px; font-weight: 600; text-transform: capitalize; }
 .ticket-chip { font-family: monospace; font-size: 11px; color: white; background: #629ffa; padding: 4px 10px; border-radius: 8px; }
+.event-url-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 8px;
+  min-width: 0;
+  max-width: 100%;
+}
+
+.event-url {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+  color: #2b7fff;
+  font-size: 12px;
+  text-decoration: none;
+}
+
+.event-url:hover {
+  text-decoration: underline;
+}
+
+.event-url > span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.copy-url-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  width: 30px;
+  height: 30px;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  background: #fff;
+  color: #64748b;
+  cursor: pointer;
+  transition: background 0.2s ease, color 0.2s ease;
+}
+
+.copy-url-btn:hover {
+  background: #eff6ff;
+  color: #2b7fff;
+}
+
+.copy-url-btn i {
+  font-size: 16px;
+}
+
+@media (max-width: 600px) {
+  .event-card {
+    align-items: flex-start;
+    gap: 16px;
+    padding: 16px;
+  }
+
+  .event-url-row {
+    max-width: 100%;
+  }
+
+  .event-url {
+    max-width: calc(100% - 38px);
+  }
+}
 </style>

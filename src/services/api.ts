@@ -21,56 +21,22 @@ const apiClient: AxiosInstance = axios.create({
 /* ---------------- LOGGING HELPERS ---------------- */
 
 const logRequest = (config: InternalAxiosRequestConfig) => {
-  console.groupCollapsed(
-    `🚀 API REQUEST: ${config.method?.toUpperCase()} ${config.baseURL ?? ''}${config.url ?? ''}`
-  )
-
-  console.log('Method:', config.method?.toUpperCase())
-  console.log('URL:', `${config.baseURL ?? ''}${config.url ?? ''}`)
-  console.log('Params:', config.params ?? null)
-  console.log('Headers:', { ...config.headers })
   console.log('Request Data:', config.data ?? null)
 
-  console.groupEnd()
 }
 
 const logResponse = (response: AxiosResponse) => {
-  console.groupCollapsed(
-    `✅ API RESPONSE: ${response.status} ${response.config.method?.toUpperCase()} ${response.config.url}`
-  )
 
-  console.log('Status:', response.status)
-  console.log('Status Text:', response.statusText)
-  console.log('URL:', response.config.url)
-  console.log('Method:', response.config.method?.toUpperCase())
-  console.log('Response Headers:', response.headers)
   console.log('Response Data:', response.data)
-
-  console.groupEnd()
 }
 
 const logError = (error: unknown) => {
   if (axios.isAxiosError(error)) {
-    console.groupCollapsed(
-      `❌ API ERROR: ${error.config?.method?.toUpperCase() ?? 'UNKNOWN'} ${error.config?.url ?? ''}`
-    )
 
-    console.error('Message:', error.message)
-    console.error('URL:', error.config?.url)
-    console.error('Method:', error.config?.method?.toUpperCase())
-    console.error('Request Data:', error.config?.data ?? null)
-    console.error('Status:', error.response?.status ?? 'No HTTP response')
-    console.error('Response Data:', error.response?.data ?? null)
-    console.error('Response Headers:', error.response?.headers ?? null)
+    console.log('Response Data:', error.response?.data ?? null)
 
-    if (error.code) {
-      console.error('Error Code:', error.code)
-    }
-
-    console.error('Full Error:', error)
-    console.groupEnd()
   } else {
-    console.error('❌ Unexpected API Error:', error)
+    console.log('❌ Unexpected API Error:', error)
   }
 }
 
@@ -82,7 +48,7 @@ apiClient.interceptors.request.use(
       const { data, error } = await supabase.auth.getSession()
 
       if (error) {
-        console.error('❌ Failed to retrieve Supabase session:', error)
+        console.log('❌ Failed to retrieve Supabase session:', error)
       }
 
       const token = data.session?.access_token
@@ -91,7 +57,7 @@ apiClient.interceptors.request.use(
         config.headers.set('Authorization', `Bearer ${token}`)
       }
     } catch (err) {
-      console.error('❌ Error getting Supabase session:', err)
+      console.log('❌ Error getting Supabase session:', err)
     }
 
     logRequest(config)

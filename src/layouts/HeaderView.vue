@@ -72,7 +72,7 @@ async function handleLogout() {
 
         <div class="p-2">
           <v-list class="pa-0" density="comfortable">
-            <v-list-item to="/kyc" rounded="lg">
+            <!-- <v-list-item to="/kyc" rounded="lg">
               <template #prepend><i class="mdi mdi-shield-check-outline mr-3 text-base text-gray-400"></i></template>
               <v-list-item-title class="text-sm">Business verification</v-list-item-title>
             </v-list-item>
@@ -80,7 +80,7 @@ async function handleLogout() {
             <v-list-item to="/settings" rounded="lg">
               <template #prepend><i class="mdi mdi-cog-outline mr-3 text-base text-gray-400"></i></template>
               <v-list-item-title class="text-sm">Settings</v-list-item-title>
-            </v-list-item>
+            </v-list-item> -->
 
             <v-divider class="my-2" />
 
