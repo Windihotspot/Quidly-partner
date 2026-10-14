@@ -249,10 +249,12 @@ const returnedRef = computed(() => route.query.reference || route.query.trxref |
   margin-bottom: 48px;
 }
 
+
 .poster {
+  border-radius: 5px;
   width: 100%;
-  max-width: 640px;
-  aspect-ratio: 4 / 5; /* try 16 / 9 for landscape banners */
+  max-width: 100%;
+  aspect-ratio: 16 / 9;
   border-radius: 20px;
   overflow: hidden;
   background: var(--card);
@@ -270,10 +272,23 @@ const returnedRef = computed(() => route.query.reference || route.query.trxref |
   height: 100%;
   object-fit: cover;
 }
+/* Mobile: portrait poster */
+@media (max-width: 860px) {
+  .poster {
+    aspect-ratio: 4 / 5;
+    border-radius: 16px;
+  }
+
+  .poster img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+}
 
 .hero__info {
   width: 100%;
-  max-width: 640px;
+  max-width: 100%;
   min-width: 0;
 }
 
