@@ -6,7 +6,7 @@ import { ORDER_LIMITS } from '@/lib/eventHelpers'
 const props = defineProps({
   modelValue: { type: Boolean, default: false },
   eventId: { type: String, required: true },
-  ticket: { type: Object, default: null }, // null = create, object = edit
+  ticket: { type: Object, default: null } // null = create, object = edit
 })
 const emit = defineEmits(['update:modelValue', 'saved'])
 
@@ -25,7 +25,7 @@ const form = reactive({
   price: null,
   maxPerOrder: 5,
   description: '',
-  groupSize: 2,
+  groupSize: 2
 })
 
 const editing = computed(() => !!props.ticket)
@@ -43,20 +43,32 @@ watch(
       stage.value = 'form'
       kind.value = t.kind
       Object.assign(form, {
-        isFree: t.is_free, inviteOnly: t.invite_only, name: t.name,
-        qtyMode: t.quantity === null ? 'unlimited' : 'limited', quantity: t.quantity,
-        price: t.is_free ? null : Number(t.price), maxPerOrder: t.max_per_order,
-        description: t.description ?? '', groupSize: t.group_size ?? 2,
+        isFree: t.is_free,
+        inviteOnly: t.invite_only,
+        name: t.name,
+        qtyMode: t.quantity === null ? 'unlimited' : 'limited',
+        quantity: t.quantity,
+        price: t.is_free ? null : Number(t.price),
+        maxPerOrder: t.max_per_order,
+        description: t.description ?? '',
+        groupSize: t.group_size ?? 2
       })
     } else {
       stage.value = 'choose'
       kind.value = 'single'
       Object.assign(form, {
-        isFree: false, inviteOnly: false, name: '', qtyMode: 'unlimited', quantity: null,
-        price: null, maxPerOrder: 5, description: '', groupSize: 2,
+        isFree: false,
+        inviteOnly: false,
+        name: '',
+        qtyMode: 'unlimited',
+        quantity: null,
+        price: null,
+        maxPerOrder: 5,
+        description: '',
+        groupSize: 2
       })
     }
-  },
+  }
 )
 
 function close() {
@@ -69,7 +81,8 @@ function validate() {
   if (form.qtyMode === 'limited') {
     const q = Number(form.quantity)
     if (!Number.isInteger(q) || q < 1) errors.quantity = 'Enter a quantity of 1 or more.'
-    else if (editing.value && q < props.ticket.quantity_sold) errors.quantity = `${props.ticket.quantity_sold} already sold or reserved.`
+    else if (editing.value && q < props.ticket.quantity_sold)
+      errors.quantity = `${props.ticket.quantity_sold} already sold or reserved.`
   }
   if (!form.isFree) {
     const p = Number(form.price)
@@ -96,7 +109,7 @@ async function save() {
     invite_only: form.inviteOnly,
     price: form.isFree ? 0 : Number(form.price),
     quantity: form.qtyMode === 'unlimited' ? null : Number(form.quantity),
-    max_per_order: form.maxPerOrder,
+    max_per_order: form.maxPerOrder
   }
   try {
     const res = editing.value
@@ -113,7 +126,12 @@ async function save() {
 </script>
 
 <template>
-  <v-dialog :model-value="modelValue" :max-width="stage === 'choose' ? 600 : 500" scrollable @update:model-value="(v) => emit('update:modelValue', v)">
+  <v-dialog
+    :model-value="modelValue"
+    :max-width="stage === 'choose' ? 600 : 500"
+    scrollable
+    @update:model-value="(v) => emit('update:modelValue', v)"
+  >
     <!-- Step 1: choose type -->
     <v-card v-if="stage === 'choose'" class="!rounded-xl">
       <v-card-title class="d-flex align-center justify-space-between pa-4">
@@ -122,14 +140,25 @@ async function save() {
       </v-card-title>
       <v-divider />
       <v-card-text class="pa-6">
-        <div class="grid grid-cols-2 gap-4">
-          <button type="button" class="kind-card" :class="{ 'kind-card--on': kind === 'single' }" @click="kind = 'single'">
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <button
+            type="button"
+            class="kind-card"
+            :class="{ 'kind-card--on': kind === 'single' }"
+            @click="kind = 'single'"
+          >
             <i class="mdi mdi-ticket-confirmation-outline kind-icon"></i>
             <p class="font-bold mt-3">Single ticket</p>
             <p class="text-sm">This ticket admits one person.</p>
             <span class="kind-radio" :class="{ 'kind-radio--on': kind === 'single' }"></span>
           </button>
-          <button type="button" class="kind-card" :class="{ 'kind-card--on': kind === 'group' }" @click="kind = 'group'">
+
+          <button
+            type="button"
+            class="kind-card"
+            :class="{ 'kind-card--on': kind === 'group' }"
+            @click="kind = 'group'"
+          >
             <i class="mdi mdi-ticket-outline kind-icon"></i>
             <p class="font-bold mt-3">Group ticket</p>
             <p class="text-sm">This ticket admits more than one person.</p>
@@ -146,18 +175,47 @@ async function save() {
     <!-- Step 2: form -->
     <v-card v-else class="!rounded-xl">
       <v-card-title class="d-flex align-center justify-space-between pa-4">
-        <span class="text-lg font-semibold mx-auto">{{ editing ? 'Edit' : 'Create' }} {{ kind }} ticket</span>
+        <span class="text-lg font-semibold mx-auto"
+          >{{ editing ? 'Edit' : 'Create' }} {{ kind }} ticket</span
+        >
         <v-btn icon="mdi-close" size="small" variant="text" @click="close" />
       </v-card-title>
       <v-divider />
       <v-card-text class="pa-5">
         <p class="font-semibold mb-3">What type of ticket is it?</p>
-        <div class="d-flex align-center gap-3 mb-5">
-          <button type="button" class="type-btn" :class="{ 'type-btn--on': form.isFree }" :disabled="locked" @click="form.isFree = true">Free</button>
-          <button type="button" class="type-btn" :class="{ 'type-btn--on': !form.isFree }" :disabled="locked" @click="form.isFree = false">Paid</button>
-          <v-checkbox v-model="form.inviteOnly" label="Invite-only" density="compact" hide-details color="#2b7fff" />
+        <div class="d-flex flex-wrap align-center gap-3 mb-5">
+          <button
+            type="button"
+            class="type-btn"
+            :class="{ 'type-btn--on': form.isFree }"
+            :disabled="locked"
+            @click="form.isFree = true"
+          >
+            Free
+          </button>
+
+          <button
+            type="button"
+            class="type-btn"
+            :class="{ 'type-btn--on': !form.isFree }"
+            :disabled="locked"
+            @click="form.isFree = false"
+          >
+            Paid
+          </button>
+
+          <v-checkbox
+            v-model="form.inviteOnly"
+            label="Invite-only"
+            density="compact"
+            hide-details
+            color="#2b7fff"
+            class="invite-checkbox"
+          />
         </div>
-        <p v-if="locked" class="q-help mb-4">Tickets have been sold, so free/paid, price and type can no longer change.</p>
+        <p v-if="locked" class="q-help mb-4">
+          Tickets have been sold, so free/paid, price and type can no longer change.
+        </p>
 
         <span class="q-label q-req">Ticket name</span>
         <v-text-field
@@ -175,7 +233,10 @@ async function save() {
         <div class="grid gap-3 mb-3" style="grid-template-columns: 1fr 1fr">
           <v-select
             v-model="form.qtyMode"
-            :items="[{ title: 'Unlimited quantity', value: 'unlimited' }, { title: 'Limited quantity', value: 'limited' }]"
+            :items="[
+              { title: 'Unlimited quantity', value: 'unlimited' },
+              { title: 'Limited quantity', value: 'limited' }
+            ]"
             variant="outlined"
             density="comfortable"
             color="#2b7fff"
@@ -229,7 +290,15 @@ async function save() {
         <p v-if="errors.price" class="q-error mb-3">{{ errors.price }}</p>
 
         <span class="q-label q-req">Order limit (per person)</span>
-        <v-select v-model="form.maxPerOrder" :items="ORDER_LIMITS" variant="outlined" density="comfortable" color="#2b7fff" hide-details class="mb-3" />
+        <v-select
+          v-model="form.maxPerOrder"
+          :items="ORDER_LIMITS"
+          variant="outlined"
+          density="comfortable"
+          color="#2b7fff"
+          hide-details
+          class="mb-3"
+        />
 
         <span class="q-label q-req">Ticket description</span>
         <v-textarea
@@ -247,21 +316,85 @@ async function save() {
       <v-divider />
       <v-card-actions class="pa-4 gap-3">
         <v-btn class="q-btn-ghost flex-1" size="large" @click="close">Cancel</v-btn>
-        <v-btn class="q-btn-primary flex-1" size="large" :loading="saving" @click="save">Save</v-btn>
+        <v-btn class="q-btn-primary flex-1" size="large" :loading="saving" @click="save"
+          >Save</v-btn
+        >
       </v-card-actions>
     </v-card>
   </v-dialog>
 </template>
 
 <style scoped>
-.kind-card { position: relative; text-align: center; padding: 28px 16px 24px; border: 1px solid #d1d5db; border-radius: 12px; background: #fff; cursor: pointer; color: #2b3e50; }
-.kind-card--on { border-color: #2b7fff; color: #2b7fff; }
-.kind-icon { font-size: 40px; }
-.kind-radio { display: inline-block; width: 22px; height: 22px; border: 1.5px solid #d1d5db; border-radius: 999px; margin-top: 14px; position: relative; }
-.kind-radio--on { border-color: #2b7fff; background: #2b7fff; }
-.kind-radio--on::after { content: ''; position: absolute; inset: 7px; background: #fff; border-radius: 999px; }
-.type-btn { padding: 12px 28px; border-radius: 10px; border: 1px solid #d1d5db; background: #fff; color: #4b5563; font-weight: 600; cursor: pointer; min-width: 110px; }
-.type-btn--on { background: #eaf2ff; border-color: #eaf2ff; color: #2b7fff; }
-.type-btn:disabled { opacity: .6; cursor: not-allowed; }
-.naira-box { background: #f3f4f6; border: 1px solid #d1d5db; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-weight: 700; color: #4b5563; }
+.kind-card {
+  position: relative;
+  text-align: center;
+  padding: 28px 16px 24px;
+  border: 1px solid #d1d5db;
+  border-radius: 12px;
+  background: #fff;
+  cursor: pointer;
+  color: #2b3e50;
+}
+.kind-card--on {
+  border-color: #2b7fff;
+  color: #2b7fff;
+}
+.kind-icon {
+  font-size: 40px;
+}
+.kind-radio {
+  display: inline-block;
+  width: 22px;
+  height: 22px;
+  border: 1.5px solid #d1d5db;
+  border-radius: 999px;
+  margin-top: 14px;
+  position: relative;
+}
+.kind-radio--on {
+  border-color: #2b7fff;
+  background: #2b7fff;
+}
+.kind-radio--on::after {
+  content: '';
+  position: absolute;
+  inset: 7px;
+  background: #fff;
+  border-radius: 999px;
+}
+.type-btn {
+  padding: 12px 28px;
+  border-radius: 10px;
+  border: 1px solid #d1d5db;
+  background: #fff;
+  color: #4b5563;
+  font-weight: 600;
+  cursor: pointer;
+  min-width: 110px;
+}
+.type-btn--on {
+  background: #eaf2ff;
+  border-color: #eaf2ff;
+  color: #2b7fff;
+}
+.type-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+.naira-box {
+  background: #f3f4f6;
+  border: 1px solid #d1d5db;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  color: #4b5563;
+}
+@media (max-width: 600px) {
+  .invite-checkbox {
+    flex-basis: 100%;
+    margin-top: 4px;
+  }
+}
 </style>

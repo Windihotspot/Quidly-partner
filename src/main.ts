@@ -1,4 +1,5 @@
 import '@/scss/style.scss'
+import '@/assets/quidly-mobile-widget.css'
 
 import { createApp } from 'vue'
 import { createPinia } from 'pinia'

@@ -18,15 +18,19 @@ const statusStyles = {
   published: { bg: '#e8f5e9', color: '#1b8a3a' },
   draft: { bg: '#fff3e0', color: '#b45309' },
   cancelled: { bg: '#fee2e2', color: '#b91c1c' },
-  completed: { bg: '#e5e7eb', color: '#374151' },
+  completed: { bg: '#e5e7eb', color: '#374151' }
 }
 
 onMounted(() => store.fetchEvents())
 
 const notify = (text) => (snackbar.value = { show: true, text })
 
-function createEvent() { router.push({ name: 'event-new' }) }
-function edit(e) { router.push({ name: 'event-edit', params: { id: e.id, step: 'details' } }) }
+function createEvent() {
+  router.push({ name: 'event-new' })
+}
+function edit(e) {
+  router.push({ name: 'event-edit', params: { id: e.id, step: 'details' } })
+}
 
 function ticketsSummary(event) {
   const types = event.ticket_types ?? []
@@ -85,74 +89,108 @@ async function doDelete() {
 </script>
 
 <template>
-  <MainLayout title="Events" subtitle="Create events and manage the ticket types partners can sell.">
+  <MainLayout
+    title="Events"
+    subtitle="Create events and manage the ticket types partners can sell."
+  >
     <div class="flex justify-end m-6">
       <v-btn class="create-btn" prepend-icon="mdi-plus" @click="createEvent">Create event</v-btn>
     </div>
 
-    <div v-if="store.loading" class="py-16 text-center"><v-progress-circular indeterminate color="#2b7fff" /></div>
+    <div v-if="store.loading" class="py-16 text-center">
+      <v-progress-circular indeterminate color="#2b7fff" />
+    </div>
     <p v-else-if="store.error" class="text-center q-error py-12">{{ store.error }}</p>
 
     <div v-else class="grid gap-4 m-4">
       <div v-for="event in store.events" :key="event.id" class="event-card">
-        <div class="flex items-center gap-4">
+        <!-- Left: event information -->
+        <div class="event-card-info">
           <span class="icon-badge" style="background: #fff3e0">
             <img v-if="event.banner_url" :src="event.banner_url" alt="" class="thumb" />
             <i v-else class="mdi mdi-calendar-outline" style="color: #b45309"></i>
           </span>
 
-          <div>
-            <div class="flex items-center gap-3">
-              <p class="font-display text-xl font-semibold event-name">{{ event.event_name }}</p>
-              <span class="status-pill" :style="{ background: statusStyles[event.status]?.bg, color: statusStyles[event.status]?.color }">
+          <div class="event-details">
+            <div class="event-heading">
+              <p class="font-display text-xl font-semibold event-name">
+                {{ event.event_name }}
+              </p>
+
+              <span
+                class="status-pill"
+                :style="{
+                  background: statusStyles[event.status]?.bg,
+                  color: statusStyles[event.status]?.color
+                }"
+              >
                 {{ event.status }}
               </span>
             </div>
+
             <p class="text-sm event-meta mt-1">
-  {{ venueLine(event) }}
-</p>
+              {{ venueLine(event) }}
+            </p>
 
-<div v-if="event.event_url" class="event-url-row">
-  <a
-    :href="absoluteUrl(event.event_url)"
-    target="_blank"
-    rel="noopener noreferrer"
-    class="event-url"
-    :title="absoluteUrl(event.event_url)"
-  >
-    <i class="mdi mdi-link-variant"></i>
-    <span>{{ absoluteUrl(event.event_url) }}</span>
-  </a>
+            <div v-if="event.event_url" class="event-url-row">
+              <a
+                :href="absoluteUrl(event.event_url)"
+                target="_blank"
+                rel="noopener noreferrer"
+                class="event-url"
+                :title="absoluteUrl(event.event_url)"
+              >
+                <i class="mdi mdi-link-variant"></i>
+                <span>{{ absoluteUrl(event.event_url) }}</span>
+              </a>
 
-  <button
-    type="button"
-    class="copy-url-btn"
-    title="Copy event URL"
-    aria-label="Copy event URL"
-    @click.stop="copyLink(event)"
-  >
-    <i class="mdi mdi-content-copy"></i>
-  </button>
-</div>
+              <button
+                type="button"
+                class="copy-url-btn"
+                title="Copy event URL"
+                aria-label="Copy event URL"
+                @click.stop="copyLink(event)"
+              >
+                <i class="mdi mdi-content-copy"></i>
+              </button>
+            </div>
+
             <div class="flex gap-2 mt-3 flex-wrap">
-              <span v-for="tt in event.ticket_types" :key="tt.id" class="ticket-chip">{{ chipLabel(tt) }}</span>
-              <span v-if="!event.ticket_types?.length" class="ticket-chip">No tickets created for this event yet</span>
+              <span v-for="tt in event.ticket_types" :key="tt.id" class="ticket-chip">
+                {{ chipLabel(tt) }}
+              </span>
+
+              <span v-if="!event.ticket_types?.length" class="ticket-chip">
+                No tickets created for this event yet
+              </span>
             </div>
           </div>
         </div>
 
-        <div class="flex items-center gap-6">
-          <div class="text-right">
-            <p class="font-display text-lg font-bold event-name">{{ ticketsSummary(event) }}</p>
+        <!-- Right: ticket summary and action menu -->
+        <div class="event-card-actions">
+          <div class="text-right ticket-summary">
+            <p class="font-display text-lg font-bold event-name">
+              {{ ticketsSummary(event) }}
+            </p>
             <p class="text-[11px] event-meta font-mono uppercase">tickets sold</p>
           </div>
+
           <v-menu>
             <template #activator="{ props }">
-              <v-btn icon="mdi-dots-vertical" variant="text" :loading="busyId === event.id" v-bind="props" />
+              <v-btn
+                icon="mdi-dots-vertical"
+                variant="text"
+                :loading="busyId === event.id"
+                v-bind="props"
+              />
             </template>
+
             <v-list density="compact" class="!rounded-xl">
               <v-list-item @click="edit(event)">Edit</v-list-item>
-              <v-list-item v-if="event.status === 'published'" @click="copyLink(event)">Copy link</v-list-item>
+              <v-list-item v-if="event.status === 'published'" @click="copyLink(event)">
+                Copy link
+              </v-list-item>
               <v-list-item
                 v-if="['draft', 'published'].includes(event.status)"
                 class="!text-[#2b7fff]"
@@ -160,23 +198,49 @@ async function doDelete() {
               >
                 {{ event.status === 'published' ? 'Unpublish' : 'Publish' }}
               </v-list-item>
-              <v-list-item v-if="event.status === 'draft'" class="!text-[#dc2626]" @click="confirmDelete = event">Delete</v-list-item>
+              <v-list-item
+                v-if="event.status === 'draft'"
+                class="!text-[#dc2626]"
+                @click="confirmDelete = event"
+              >
+                Delete
+              </v-list-item>
             </v-list>
           </v-menu>
         </div>
       </div>
 
-      <p v-if="!store.events.length" class="text-center event-meta text-sm py-12">No events yet — create your first one.</p>
+      <p v-if="!store.events.length" class="text-center event-meta text-sm py-12">
+        No events yet — create your first one.
+      </p>
     </div>
 
-    <v-dialog :model-value="!!confirmDelete" max-width="400" @update:model-value="(v) => { if (!v) confirmDelete = null }">
+    <v-dialog
+      :model-value="!!confirmDelete"
+      max-width="400"
+      @update:model-value="
+        (v) => {
+          if (!v) confirmDelete = null
+        }
+      "
+    >
       <v-card class="!rounded-xl pa-2">
         <v-card-title class="text-lg font-semibold">Delete draft?</v-card-title>
-        <v-card-text>“{{ confirmDelete?.event_name }}” and its tickets will be permanently deleted.</v-card-text>
+        <v-card-text
+          >“{{ confirmDelete?.event_name }}” and its tickets will be permanently
+          deleted.</v-card-text
+        >
         <v-card-actions class="px-4 pb-4">
           <v-spacer />
           <v-btn class="q-btn-ghost" @click="confirmDelete = null">Cancel</v-btn>
-          <v-btn color="#dc2626" variant="flat" class="text-none" :loading="deleting" @click="doDelete">Delete</v-btn>
+          <v-btn
+            color="#dc2626"
+            variant="flat"
+            class="text-none"
+            :loading="deleting"
+            @click="doDelete"
+            >Delete</v-btn
+          >
         </v-card-actions>
       </v-card>
     </v-dialog>
@@ -185,17 +249,127 @@ async function doDelete() {
   </MainLayout>
 </template>
 
+
 <style scoped>
-.v-btn { text-transform: none; }
-.create-btn { background: #2b7fff !important; color: #fff !important; border-radius: 12px !important; font-weight: 600; }
-.event-card { background: #fff; border-radius: 18px; border: 1px solid rgba(0, 0, 0, 0.05); box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04); padding: 24px; display: flex; align-items: center; justify-content: space-between; transition: box-shadow 0.2s ease; }
-.event-card:hover { box-shadow: 0 4px 14px rgba(0, 0, 0, 0.06); }
-.icon-badge { width: 44px; height: 44px; border-radius: 12px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; font-size: 20px; overflow: hidden; }
-.thumb { width: 100%; height: 100%; object-fit: cover; }
-.event-name { color: #2b3e50; }
-.event-meta { color: #6b7280; }
-.status-pill { font-size: 11px; padding: 2px 10px; border-radius: 999px; font-weight: 600; text-transform: capitalize; }
-.ticket-chip { font-family: monospace; font-size: 11px; color: white; background: #629ffa; padding: 4px 10px; border-radius: 8px; }
+.v-btn {
+  text-transform: none;
+}
+
+.create-btn {
+  background: #2b7fff !important;
+  color: #fff !important;
+  border-radius: 12px !important;
+  font-weight: 600;
+}
+
+/* Event card */
+.event-card {
+  width: 100%;
+  min-width: 0;
+  box-sizing: border-box;
+  background: #fff;
+  border-radius: 18px;
+  border: 1px solid rgba(0, 0, 0, 0.05);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
+  padding: 24px;
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 24px;
+  transition: box-shadow 0.2s ease;
+}
+
+.event-card:hover {
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.06);
+}
+
+/* Event information */
+.event-card-info {
+  display: flex;
+  align-items: flex-start;
+  gap: 16px;
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.event-details {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.event-heading {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px 12px;
+  min-width: 0;
+}
+
+.event-name {
+  color: #2b3e50;
+  overflow-wrap: anywhere;
+  word-break: normal;
+}
+
+.event-heading .event-name {
+  min-width: 0;
+  margin: 0;
+}
+
+.event-meta {
+  color: #6b7280;
+  overflow-wrap: anywhere;
+}
+
+/* Event thumbnail */
+.icon-badge {
+  width: 44px;
+  height: 44px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  font-size: 20px;
+  overflow: hidden;
+}
+
+.thumb {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+/* Status */
+.status-pill {
+  display: inline-flex;
+  align-items: center;
+  flex-shrink: 0;
+  font-size: 11px;
+  padding: 3px 10px;
+  border-radius: 999px;
+  font-weight: 600;
+  text-transform: capitalize;
+  white-space: nowrap;
+}
+
+/* Ticket chips */
+.ticket-chip {
+  display: inline-block;
+  max-width: 100%;
+  box-sizing: border-box;
+  font-family: monospace;
+  font-size: 11px;
+  color: white;
+  background: #1a72f7;
+  padding: 4px 10px;
+  border-radius: 8px;
+  overflow-wrap: anywhere;
+  white-space: normal;
+  line-height: 1.5;
+}
+
+/* Event URL */
 .event-url-row {
   display: flex;
   align-items: center;
@@ -209,6 +383,7 @@ async function doDelete() {
   display: inline-flex;
   align-items: center;
   gap: 6px;
+  flex: 1 1 auto;
   min-width: 0;
   color: #2b7fff;
   font-size: 12px;
@@ -219,7 +394,13 @@ async function doDelete() {
   text-decoration: underline;
 }
 
+.event-url > i {
+  flex-shrink: 0;
+}
+
 .event-url > span {
+  display: block;
+  min-width: 0;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -237,7 +418,9 @@ async function doDelete() {
   background: #fff;
   color: #64748b;
   cursor: pointer;
-  transition: background 0.2s ease, color 0.2s ease;
+  transition:
+    background 0.2s ease,
+    color 0.2s ease;
 }
 
 .copy-url-btn:hover {
@@ -249,19 +432,124 @@ async function doDelete() {
   font-size: 16px;
 }
 
+/* Ticket summary and actions */
+.event-card-actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 12px;
+  flex: 0 0 auto;
+  min-width: 0;
+}
+
+.ticket-summary {
+  text-align: right;
+  white-space: nowrap;
+}
+
+.ticket-summary p {
+  margin: 0;
+}
+
+/* Tablet and mobile */
 @media (max-width: 600px) {
   .event-card {
-    align-items: flex-start;
+    flex-direction: column;
+    align-items: stretch;
     gap: 16px;
     padding: 16px;
   }
 
+  .event-card-info {
+    width: 100%;
+    gap: 12px;
+  }
+
+  .event-details {
+    width: 100%;
+  }
+
+  .icon-badge {
+    width: 40px;
+    height: 40px;
+  }
+
+  .event-heading {
+    align-items: flex-start;
+    gap: 6px 8px;
+  }
+
+  .event-heading .event-name {
+    font-size: 16px;
+    line-height: 1.4;
+  }
+
+  .event-meta {
+    font-size: 12px;
+    line-height: 1.5;
+  }
+
+  .event-card-actions {
+    width: 100%;
+    box-sizing: border-box;
+    justify-content: space-between;
+    padding-top: 12px;
+    border-top: 1px solid #f1f5f9;
+  }
+
+  .ticket-summary {
+    text-align: left;
+  }
+
+  .ticket-summary .event-name {
+    font-size: 17px;
+  }
+
   .event-url-row {
-    max-width: 100%;
+    width: 100%;
   }
 
   .event-url {
-    max-width: calc(100% - 38px);
+    max-width: 100%;
+  }
+
+  .ticket-chip {
+    max-width: 100%;
+    white-space: normal;
+    overflow-wrap: anywhere;
+  }
+}
+
+/* Very narrow phones */
+@media (max-width: 380px) {
+  .event-card {
+    padding: 12px;
+    gap: 12px;
+  }
+
+  .event-card-info {
+    gap: 10px;
+  }
+
+  .icon-badge {
+    width: 36px;
+    height: 36px;
+    border-radius: 10px;
+  }
+
+  .event-heading .event-name {
+    font-size: 15px;
+  }
+
+  .status-pill {
+    font-size: 10px;
+    padding: 3px 8px;
+  }
+
+  .ticket-chip {
+    font-size: 10px;
+    padding: 4px 8px;
   }
 }
 </style>
+

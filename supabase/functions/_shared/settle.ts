@@ -5,9 +5,11 @@ import type { SupabaseClient } from 'https://esm.sh/@supabase/supabase-js@2.45.4
 import { HttpError } from './http.ts'
 import { verifyPayment, toKobo } from './quidlyPay.ts'
 import { queuePartnerWebhook } from './webhooks.ts' // your existing helper
+import { ensureDelivery, deliverTickets, background } from './deliverTickets.ts'
+import { pdfUrl } from './tickets.ts'
 
 export type Tx = Record<string, any>
-export type Settlement = { status: 'completed' | 'pending' | 'failed' | 'review'; tickets?: unknown[]; message?: string }
+export type Settlement = { status: 'completed' | 'pending' | 'failed' | 'review'; tickets?: unknown[]; message?: string; download_url?: string }
 
 const COLUMNS = 'id, partner_id, event_id, ticket_type_id, quantity, reference, status, amount, currency, customer_name, customer_email, customer_phone, payment_gateway_ref, metadata'
 
@@ -37,7 +39,7 @@ async function flagReview(admin: SupabaseClient, tx: Tx, quidlyRef: string, reas
 const CHANNELS = ['card', 'bank_transfer', 'ussd', 'bank_pay']
 
 export async function settle(admin: SupabaseClient, tx: Tx, quidlyRef: string): Promise<Settlement> {
-  if (tx.status === 'completed') return { status: 'completed', tickets: await ticketsOf(admin, tx.id) }
+  if (tx.status === 'completed') return { status: 'completed', tickets: await ticketsOf(admin, tx.id), download_url: await pdfUrl(tx.reference) }
   if (tx.payment_gateway_ref && tx.payment_gateway_ref !== quidlyRef) {
     throw new HttpError(409, 'This order is linked to a different payment')
   }
@@ -95,7 +97,10 @@ export async function settle(admin: SupabaseClient, tx: Tx, quidlyRef: string): 
     // a unique index on (transaction_id, event_type) makes the loser of a confirm/webhook race land here
     console.warn('partner webhook not queued (likely already queued)', (e as Error).message)
   }
-  return { status: 'completed', tickets: result.tickets ?? (await ticketsOf(admin, tx.id)) }
+  // issue the QR tickets + email them; recorded first so the retry job can pick it up if this worker dies
+  await ensureDelivery(admin, tx.id)
+  background(deliverTickets(admin, tx.id))
+  return { status: 'completed', tickets: result.tickets ?? (await ticketsOf(admin, tx.id)), download_url: await pdfUrl(tx.reference) }
 }
 
 /** payment.reversed (refund/chargeback): void unused tickets and flag the order for a human. */

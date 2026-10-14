@@ -74,7 +74,7 @@ const router = createRouter({
       name: 'event-edit',
       component: () => import('@/views/events/EventWizard.vue'),
       props: true,
-      meta: { requiresAuth: true },
+    
     },
     {
       path: '/webhooks',

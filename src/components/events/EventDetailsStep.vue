@@ -299,10 +299,26 @@ async function submit() {
     </div>
 
     <p v-if="saveError" class="q-error mt-6 text-center">{{ saveError }}</p>
-    <div class="flex justify-center gap-4 mt-10 mb-12">
-      <v-btn class="q-btn-ghost" size="large" min-width="200" @click="router.push('/events')">Cancel</v-btn>
-      <v-btn class="q-btn-primary" size="large" min-width="200" :loading="saving" @click="submit">Continue</v-btn>
-    </div>
+   <div class="flex flex-col sm:flex-row justify-center gap-4 mt-10 mb-12">
+  <v-btn
+    class="q-btn-ghost w-full sm:w-auto"
+    size="large"
+    min-width="200"
+    @click="router.push('/events')"
+  >
+    Cancel
+  </v-btn>
+
+  <v-btn
+    class="q-btn-primary w-full sm:w-auto"
+    size="large"
+    min-width="200"
+    :loading="saving"
+    @click="submit"
+  >
+    Continue
+  </v-btn>
+</div>
   </div>
 </template>
 

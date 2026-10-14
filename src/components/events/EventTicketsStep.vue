@@ -110,36 +110,99 @@ const priceLabel = (t) => (t.is_free ? 'Free' : formatNaira(t.price))
     </div>
 
     <!-- list -->
-    <div v-else class="tbl">
-      <div class="tbl__head">
-        <span></span><span>Ticket name</span><span>Tickets sold</span><span>Ticket price</span><span>Tag</span><span></span>
-      </div>
-      <div
-        v-for="(t, i) in rows"
-        :key="t.id"
-        class="tbl__row"
-        draggable="true"
-        @dragstart="dragIndex = i"
-        @dragover.prevent
-        @drop.prevent="onDrop(i)"
-      >
-        <i class="mdi mdi-drag-horizontal-variant drag" title="Drag to reorder"></i>
-        <span class="font-medium">{{ t.name }}</span>
-        <span>{{ soldLabel(t) }}</span>
-        <span>{{ priceLabel(t) }}</span>
-        <span class="flex gap-2 flex-wrap">
+
+<div v-else class="tbl">
+  <!-- Desktop table header -->
+  <div class="tbl__head hidden md:grid">
+    <span></span>
+    <span>Ticket name</span>
+    <span>Tickets sold</span>
+    <span>Ticket price</span>
+    <span>Tag</span>
+    <span></span>
+  </div>
+
+  <div
+    v-for="(t, i) in rows"
+    :key="t.id"
+    class="tbl__row"
+    draggable="true"
+    @dragstart="dragIndex = i"
+    @dragover.prevent
+    @drop.prevent="onDrop(i)"
+  >
+    <!-- Drag handle -->
+    <i
+      class="mdi mdi-drag-horizontal-variant drag"
+      title="Drag to reorder"
+    ></i>
+
+    <!-- Ticket name -->
+    <div class="ticket-name">
+      <span class="font-medium">{{ t.name }}</span>
+
+      <!-- Mobile details -->
+      <div class="ticket-mobile-details md:hidden">
+        <div class="ticket-detail">
+          <span class="ticket-detail__label">Tickets sold</span>
+          <span>{{ soldLabel(t) }}</span>
+        </div>
+
+        <div class="ticket-detail">
+          <span class="ticket-detail__label">Ticket price</span>
+          <span>{{ priceLabel(t) }}</span>
+        </div>
+
+        <div class="ticket-tags">
           <span class="tag">{{ tag(t) }}</span>
-          <span v-if="t.invite_only" class="tag tag--alt">Invite-only</span>
-        </span>
-        <v-menu>
-          <template #activator="{ props: m }"><v-btn icon="mdi-dots-vertical" variant="text" size="small" v-bind="m" /></template>
-          <v-list density="compact" class="!rounded-xl">
-            <v-list-item @click="openEdit(t)">Edit</v-list-item>
-            <v-list-item class="!text-[#dc2626]" :disabled="t.quantity_sold > 0" @click="deleting = t">Delete</v-list-item>
-          </v-list>
-        </v-menu>
+          <span v-if="t.invite_only" class="tag tag--alt">
+            Invite-only
+          </span>
+        </div>
       </div>
     </div>
+
+    <!-- Desktop-only columns -->
+    <span class="hidden md:block">{{ soldLabel(t) }}</span>
+    <span class="hidden md:block">{{ priceLabel(t) }}</span>
+
+    <span class="hidden md:flex gap-2 flex-wrap">
+      <span class="tag">{{ tag(t) }}</span>
+      <span v-if="t.invite_only" class="tag tag--alt">
+        Invite-only
+      </span>
+    </span>
+
+    <!-- Actions -->
+    <div class="ticket-actions">
+      <v-menu>
+        <template #activator="{ props: m }">
+          <v-btn
+            icon="mdi-dots-vertical"
+            variant="text"
+            size="small"
+            v-bind="m"
+          />
+        </template>
+
+        <v-list density="compact" class="!rounded-xl">
+          <v-list-item @click="openEdit(t)">
+            Edit
+          </v-list-item>
+
+          <v-list-item
+            class="!text-[#dc2626]"
+            :disabled="t.quantity_sold > 0"
+            @click="deleting = t"
+          >
+            Delete
+          </v-list-item>
+        </v-list>
+      </v-menu>
+    </div>
+  </div>
+</div>
+
 
     <p v-if="error" class="q-error mt-3 text-center">{{ error }}</p>
 
@@ -172,9 +235,107 @@ const priceLabel = (t) => (t.is_free ? 'Free' : formatNaira(t.price))
 
 <style scoped>
 .empty { display: flex; flex-direction: column; align-items: center; padding: 56px 16px; text-align: center; }
-.tbl { border: 1px solid #e5e7eb; border-radius: 12px; overflow: hidden; background: #fff; }
-.tbl__head, .tbl__row { display: grid; grid-template-columns: 48px 2fr 1.4fr 1.4fr 1.6fr 48px; align-items: center; padding: 0 12px; }
-.tbl__head { background: #f3f4f6; height: 52px; font-size: 14px; color: #4b5563; }
+/* Desktop table */
+.tbl {
+  width: 100%;
+  min-width: 0;
+}
+
+.tbl__head,
+.tbl__row {
+  display: grid;
+  grid-template-columns: 28px minmax(140px, 1.5fr)
+    minmax(100px, 1fr) minmax(100px, 1fr)
+    minmax(130px, 1.2fr) 40px;
+  align-items: center;
+  gap: 12px;
+}
+
+.tbl__head {
+  padding: 14px 16px;
+  font-size: 12px;
+  font-weight: 600;
+  color: #64748b;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.tbl__row {
+  padding: 16px;
+  border-bottom: 1px solid #f1f5f9;
+}
+
+.ticket-name {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.ticket-actions {
+  display: flex;
+  justify-content: flex-end;
+}
+
+.ticket-mobile-details {
+  display: none;
+}
+
+/* Mobile ticket cards */
+@media (max-width: 767px) {
+  .tbl__row {
+    display: grid;
+    grid-template-columns: 24px minmax(0, 1fr) 36px;
+    gap: 10px;
+    align-items: start;
+    padding: 16px 12px;
+    border: 1px solid #e5e7eb;
+    border-radius: 12px;
+    margin-bottom: 12px;
+    background: #fff;
+  }
+
+  .ticket-name {
+    min-width: 0;
+    padding-top: 5px;
+  }
+
+  .ticket-mobile-details {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    margin-top: 14px;
+  }
+
+  .ticket-detail {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 12px;
+    font-size: 13px;
+  }
+
+  .ticket-detail__label {
+    color: #64748b;
+    flex-shrink: 0;
+  }
+
+  .ticket-tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+
+  .ticket-actions {
+    grid-column: 3;
+    grid-row: 1;
+  }
+
+  .drag {
+    padding-top: 5px;
+  }
+
+  .tbl__head {
+    display: none;
+  }
+}
 .tbl__row { min-height: 60px; border-top: 1px solid #e5e7eb; font-size: 14px; }
 .tbl__row[draggable='true'] { cursor: grab; }
 .drag { color: #9ca3af; font-size: 22px; }
