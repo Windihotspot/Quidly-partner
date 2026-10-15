@@ -60,6 +60,13 @@ const stats = computed(() => {
       textColor: '#059669'
     },
     {
+  label: 'Pending',
+  value: s ? n(s.pending) : dash,
+  icon: 'mdi-clock-outline',
+  bgColor: '#fffbeb',
+  textColor: '#d97706'
+},
+    {
       label: 'Failed',
       value: s ? n(s.failed) : dash,
       icon: 'mdi-close-circle-outline',
@@ -156,13 +163,13 @@ const setup = computed(() => {
       done: o.has_published_event,
       to: { name: 'events' }
     },
-    {
-      key: 'api',
-      label: 'Create an API key',
-      hint: 'To embed the payment widget on your own site',
-      done: o.has_api_key,
-      to: '/api-keys'
-    }
+    // {
+    //   key: 'api',
+    //   label: 'Create an API key',
+    //   hint: 'To embed the payment widget on your own site',
+    //   done: o.has_api_key,
+    //   to: '/api-keys'
+    // }
   ]
 })
 const doneCount = computed(() => setup.value.filter((s) => s.done).length)
