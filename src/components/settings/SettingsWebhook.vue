@@ -28,7 +28,23 @@ watch(() => props.state.webhook, (w) => {
 const hasUrl = computed(() => !!props.state.webhook.url)
 const pages = computed(() => Math.max(1, Math.ceil(log.value.total / log.value.size)))
 const fmt = (d) => (d ? new Date(d).toLocaleString('en-NG', { dateStyle: 'medium', timeStyle: 'short' }) : '')
-const pillClass = (s) => (s === 'delivered' ? 'pill pill--ok' : s === 'failed' ? 'pill pill--bad' : 'pill')
+const eventLabel = (type) => {
+  const labels = {
+    'ticket.purchased': 'Ticket Purchased',
+    ping: 'Test Event',
+  }
+
+  return labels[type] ?? type
+}
+
+const eventPillClass = (type) => {
+  const classes = {
+    'ticket.purchased': 'pill pill--ok',
+    ping: 'pill pill--info',
+  }
+
+  return classes[type] ?? 'pill'
+}
 
 async function loadLog(page = 0) {
   busy.log = true
@@ -165,11 +181,13 @@ const onFilter = () => loadLog(0)
       <div v-for="ev in log.items" :key="ev.id" class="ev">
         <div class="flex flex-wrap items-center justify-between gap-2">
           <button type="button" class="ev__main" @click="toggleOpen(ev.id)">
-            <span class="code-inline">{{ ev.event_type }}</span>
-            <span class="q-help ml-2">{{ fmt(ev.created_at) }}</span>
+           <span :class="eventPillClass(ev.event_type)">
+  {{ eventLabel(ev.event_type) }}
+</span>
+<span class="q-help ml-2">{{ fmt(ev.created_at) }}</span>
           </button>
           <div class="flex items-center gap-2">
-            <span :class="pillClass(ev.delivery_status)">{{ ev.delivery_status }}</span>
+            <!-- <span :class="pillClass(ev.delivery_status)">{{ ev.delivery_status }}</span> -->
             <v-btn v-if="ev.delivery_status === 'failed'" class="q-btn-ghost" size="small" :loading="retrying === ev.id" @click="retry(ev)">Retry</v-btn>
           </div>
         </div>

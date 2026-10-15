@@ -70,15 +70,42 @@ export async function verifyPayment(quidlyRef: string): Promise<Verified> {
 
 export type CallbackEvent = 'payment.success' | 'payment.failed' | 'payment.expired' | 'payment.reversed'
 
+
 export function parseCallback(payload: Record<string, any>) {
-  const d = payload?.data && typeof payload.data === 'object' ? payload.data : {}
-  const ref = d.tx_ref ?? d.reference // ASSUMPTION: only present if the widget echoes our reference
+  const data =
+    payload?.data && typeof payload.data === 'object'
+      ? payload.data
+      : {}
+
+  const getString = (...values: unknown[]): string | null => {
+    for (const value of values) {
+      if (typeof value === 'string' && value.trim()) {
+        return value.trim()
+      }
+    }
+
+    return null
+  }
+
   return {
-    eventType: String(payload?.event_type ?? ''),
-    quidlyRef: d.quidly_ref ? String(d.quidly_ref) : null,
-    reference: ref ? String(ref) : null,
+    eventType: getString(payload?.event_type),
+    quidlyRef: getString(
+      data.quidly_ref,
+      payload?.quidly_ref,
+    ),
+    reference: getString(
+      data.merchant_ref,
+      data.transaction_ref,
+      data.reference,
+      data.tx_ref,
+      payload?.merchant_ref,
+      payload?.transaction_ref,
+      payload?.reference,
+      payload?.tx_ref,
+    ),
   }
 }
+
 
 const enc = new TextEncoder()
 const hex = (buf: ArrayBuffer) => [...new Uint8Array(buf)].map((b) => b.toString(16).padStart(2, '0')).join('')
