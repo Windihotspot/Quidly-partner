@@ -1,10 +1,11 @@
-
 import ApiService from '@/services/api'
 
 export const ordersService = {
-  // Fetch paginated orders with optional filters
-  list: (params = {}) => ApiService.post('/partner-orders-full', params),
-
-  // Fetch a single order with all related details
-  details: (params = {}) => ApiService.post('/partner-orders-details', params),
+  // Fetch paginated orders and all related records
+  list: (params = {}) =>
+    ApiService.post('/partner-orders-full', {
+      limit: params.limit ?? 50,
+      offset: params.offset ?? 0,
+      days: params.days ?? 30,
+    }),
 }

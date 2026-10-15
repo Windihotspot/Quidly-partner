@@ -5,6 +5,7 @@ const sidebarItems = [
     items: [
       { nav: 'overview', label: 'Dashboard', icon: 'mdi mdi-view-dashboard-outline', to: '/dashboard' },
       { nav: 'events', label: 'Events', icon: 'mdi mdi-calendar-outline', to: '/events' },
+    { nav: 'orders', label: 'Orders', icon: 'mdi mdi-receipt-text-outline', to: '/orders' },
     ],
   },
    {

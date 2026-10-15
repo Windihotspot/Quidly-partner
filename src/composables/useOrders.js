@@ -1,4 +1,3 @@
-
 import { ref, computed, watch, onMounted } from 'vue'
 import { ordersService } from '@/services/ordersService'
 
@@ -22,7 +21,6 @@ export function useOrders() {
     Math.max(1, Math.ceil(total.value / pageSize.value)),
   )
 
-  // Client-side filtering of the orders currently loaded.
   const filteredOrders = computed(() => {
     const query = search.value.trim().toLowerCase()
 
@@ -31,7 +29,8 @@ export function useOrders() {
 
       const matchesStatus =
         status.value === 'all' ||
-        String(tx.status ?? '').toLowerCase() === status.value
+        String(tx.status ?? '').toLowerCase() ===
+          status.value.toLowerCase()
 
       const matchesSearch =
         !query ||
@@ -41,7 +40,9 @@ export function useOrders() {
           tx.customer_email,
           order.event?.event_name,
           order.ticket_type?.name,
-        ].some((value) => String(value ?? '').toLowerCase().includes(query))
+        ].some((value) =>
+          String(value ?? '').toLowerCase().includes(query),
+        )
 
       return matchesStatus && matchesSearch
     })
@@ -54,20 +55,28 @@ export function useOrders() {
     try {
       const response = await ordersService.list({
         days: days.value,
-        page: page.value,
-        page_size: pageSize.value,
         limit: pageSize.value,
         offset: (page.value - 1) * pageSize.value,
       })
 
-      // Accommodate common ApiService response wrappers.
-      const payload = response?.data?.data
-        ?? response?.data
-        ?? response
+      // Support Axios responses and directly returned payloads.
+      let payload = response?.data ?? response
 
-      orders.value = payload?.orders ?? []
+      // Unwrap the Edge Function's { success, data } response.
+      if (payload?.success === true) {
+        payload = payload.data
+      } else if (payload?.data && !payload?.orders) {
+        payload = payload.data
+      }
+
+      orders.value = Array.isArray(payload?.orders)
+        ? payload.orders
+        : []
+
       total.value = Number(
-        payload?.pagination?.total ?? payload?.total ?? orders.value.length,
+        payload?.pagination?.total ??
+          payload?.total ??
+          orders.value.length,
       )
     } catch (err) {
       error.value =
@@ -109,13 +118,12 @@ export function useOrders() {
     selectedOrder.value = null
   }
 
-  // Reload from the API when the date range changes.
+  // Reset pagination when the date range changes.
   watch(days, () => {
     page.value = 1
     refresh()
   })
 
-  // Search and status filter the loaded page without another request.
   onMounted(refresh)
 
   return {
