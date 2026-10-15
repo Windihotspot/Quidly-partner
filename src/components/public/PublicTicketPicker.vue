@@ -133,7 +133,7 @@ async function submit() {
     </div>
 
     <template v-else>
-      <h3 class="picker__title">Tickets</h3>
+      <h3 class="picker__title">Place an order for Tickets</h3>
 
       <p v-if="ended" class="notice">This event has ended.</p>
       <p v-else-if="!tickets.length" class="notice">Tickets aren't available for this event yet.</p>
