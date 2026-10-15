@@ -263,11 +263,11 @@ const confettiPieces = Array.from({ length: 42 }, (_, i) => i)
 
 <template>
   <div class="picker">
-    <div class="widget-test-controls">
+    <!-- <div class="widget-test-controls">
       <button type="button" @click="testOpenQuidly">Test Open</button>
 
       <button type="button" @click="testCloseQuidly">Test Close</button>
-    </div>
+    </div> -->
     <!-- order confirmation -->
 
     <!-- order confirmation -->
