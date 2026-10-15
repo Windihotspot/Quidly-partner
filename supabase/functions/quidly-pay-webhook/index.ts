@@ -7,6 +7,10 @@ import { handle, reply, requireMethod, HttpError } from '../_shared/http.ts'
 import { getAdminClient } from '../_shared/supabaseAdmin.ts'
 import { parseCallback, verifyWebhookSignature } from '../_shared/quidlyPay.ts'
 import { loadTx, settle, markReversed } from '../_shared/settle.ts'
+import {
+  background,
+  deliverTickets,
+} from '../_shared/deliverTickets.ts'
 
 Deno.serve(
   handle(

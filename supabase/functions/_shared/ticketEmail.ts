@@ -27,7 +27,7 @@ export async function sendTicketEmail(order: Order, downloadUrl: string): Promis
   if (!apiKey || !configId || !templateId) throw new HttpError(500, 'Email is not configured')
   const tz = event.timezone || 'Africa/Lagos'
 
-  const res = await fetch(`${env('TERMII_BASE_URL') || 'hhttps://v4.api.termii.com/'}/api/templates/send-email`, {
+  const res = await fetch(`${env('TERMII_BASE_URL') || 'https://v4.api.termii.com/'}/api/templates/send-email`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     signal: AbortSignal.timeout(15000),

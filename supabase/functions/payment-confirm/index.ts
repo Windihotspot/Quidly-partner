@@ -5,6 +5,7 @@
 import { handle, reply, readJson, requireMethod, HttpError } from '../_shared/http.ts'
 import { getAdminClient } from '../_shared/supabaseAdmin.ts'
 import { loadTx, settle, ticketsOf } from '../_shared/settle.ts'
+import { background, deliverTickets } from '../_shared/deliverTickets.ts'
 
 Deno.serve(handle(async (req, cors) => {
   requireMethod(req, 'POST')
@@ -16,9 +17,23 @@ Deno.serve(handle(async (req, cors) => {
   const tx = await loadTx(admin, { reference })
   if (!tx) throw new HttpError(404, 'Order not found')
 
-  if (tx.status === 'completed') {
-    return reply(cors, { reference, status: 'completed', tickets: await ticketsOf(admin, tx.id) })
-  }
+ if (tx.status === 'completed') {
+  background(
+    deliverTickets(admin, tx.id).then((deliveryStatus) => {
+      console.log('[payment-confirm] ticket_delivery_result', {
+        transactionId: tx.id,
+        reference,
+        deliveryStatus,
+      })
+    }),
+  )
+
+  return reply(cors, {
+    reference,
+    status: 'completed',
+    tickets: await ticketsOf(admin, tx.id),
+  })
+}
 
   const quidlyRef = String(body.quidly_ref ?? tx.payment_gateway_ref ?? '').trim()
   if (!quidlyRef) {

@@ -1,14 +1,21 @@
-// src/services/publicEventService.js
-// Public (no login) endpoints. Both functions must be deployed with --no-verify-jwt.
+
+ // src/services/publicEventService.js
+
 import ApiService from '@/services/api'
 
 export const publicEventService = {
-  getEvent: (slug) => ApiService.get(`/public-event?slug=${encodeURIComponent(slug)}`),
+  getEvent: (slug) =>
+    ApiService.get(`/public-event?slug=${encodeURIComponent(slug)}`),
 
-  // { event_id, ticket_type_id, quantity, customer:{name,email,phone?}, widget_session_id?, callback_url? }
-  createTransaction: (payload) => ApiService.post('/widget-create-transaction', payload),
-  confirmPayment: async (reference, quidly_ref) => {
-  const res = await ApiService.post('/payment-confirm', { reference, quidly_ref })
-  return res?.data ?? res
-},
+  createTransaction: (payload) =>
+    ApiService.post('/widget-create-transaction', payload),
+
+  confirmPayment: async (reference, quidlyRef = '') => {
+    const response = await ApiService.post('/payment-confirm', {
+      reference,
+      quidly_ref: quidlyRef || undefined,
+    })
+
+    return response?.data ?? response
+  },
 }
