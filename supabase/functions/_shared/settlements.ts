@@ -24,7 +24,7 @@ export function loadPolicy(): Policy {
   return {
     fee_percent: pct !== undefined && pct !== '' && Number.isFinite(pctNum) && pctNum >= 0 && pctNum <= 100 ? pctNum : null,
     fee_flat: num(Deno.env.get('PLATFORM_FEE_FLAT'), 0),
-    hold_days: Math.floor(num(Deno.env.get('SETTLEMENT_HOLD_DAYS'), 2)),
+    hold_days: Math.floor(num(Deno.env.get('SETTLEMENT_HOLD_DAYS'), 1)),
     min_payout: num(Deno.env.get('SETTLEMENT_MIN_PAYOUT'), 1000),
     release: Deno.env.get('SETTLEMENT_RELEASE') === 'after_event' ? 'after_event' : 'rolling',
     payout_mode: Deno.env.get('SETTLEMENT_PAYOUT_MODE') === 'gateway' ? 'gateway' : 'manual',
