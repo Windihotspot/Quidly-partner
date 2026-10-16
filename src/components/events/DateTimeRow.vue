@@ -61,37 +61,42 @@ function onDate(value) {
 function onTime(value) {
   if (!value) return
 
-  // Vuetify time picker returns HH:mm.
-  const match = String(value).match(/^(\d{1,2}):(\d{2})/)
+  const match = String(value).match(/^(\d{1,2}):(\d{2})$/)
   if (!match) return
 
   const hours = Number(match[1])
   const minutes = Number(match[2])
 
-  if (hours > 23 || minutes > 59) return
+  if (hours < 0 || hours > 23 || minutes < 0 || minutes > 59) return
 
   emit(
     'update:time',
     `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}`,
   )
+
   emit('update:ampm', hours >= 12 ? 'PM' : 'AM')
 }
 
 function onAmpm(value) {
-  if (!value || !props.time) {
+  if (!value) return
+
+  if (!props.time) {
     emit('update:ampm', value)
     return
   }
 
   const [hours, minutes] = props.time.split(':').map(Number)
-  const hour12 = hours % 12
 
+  if (!Number.isInteger(hours) || !Number.isInteger(minutes)) return
+
+  const hour12 = hours % 12
   const newHours = value === 'PM' ? hour12 + 12 : hour12
 
   emit(
     'update:time',
     `${String(newHours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}`,
   )
+
   emit('update:ampm', value)
 }
 </script>

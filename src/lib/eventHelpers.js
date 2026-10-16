@@ -82,7 +82,7 @@ function tzOffsetMs(utcMs, tz) {
   return Date.UTC(+p.year, +p.month - 1, +p.day, +p.hour, +p.minute, +p.second) - utcMs
 }
 
-export const TIME_RE = /^(0?[1-9]|1[0-2]):[0-5]\d$/
+export const TIME_RE = /^([01]\d|2[0-3]):[0-5]\d$/
 
 export function zonedToUtcISO(date, time, ampm, tz) {
   const [h, m] = time.split(':').map(Number)
