@@ -35,3 +35,6 @@ coverage
 *.sw?
 
 *.tsbuildinfo
+
+
+supabase/functions/.env

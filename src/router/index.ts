@@ -69,6 +69,14 @@ const router = createRouter({
       meta: { requiresAuth: true }
     },
     {
+      path: '/payment/callback',
+      name: 'PaymentCallback',
+      component: () => import('@/views/PaymentCallback.vue'),
+      meta: {
+        requiresAuth: true
+      }
+    },
+    {
       path: '/events/:id/:step(details|appearance|tickets|publish)',
       name: 'event-edit',
       component: () => import('@/views/events/EventWizard.vue'),

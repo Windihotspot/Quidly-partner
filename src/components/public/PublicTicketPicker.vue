@@ -1,7 +1,8 @@
 <script setup>
 import { ref, reactive, computed, watch, onBeforeUnmount } from 'vue'
 import { publicEventService } from '@/services/publicEventService'
-import { runCheckout } from '@/lib/quidlyPay'
+// import { runCheckout } from '@/lib/quidlyPay'
+import { runCheckout } from '@/lib/paystack'
 import { formatNaira } from '@/lib/eventHelpers'
 import { pollPaymentStatus } from '@/services/paymentPolling'
 
@@ -192,14 +193,56 @@ async function pay() {
   }
 }
 
+// async function submit() {
+//   error.value = ''
+//   notice.value = ''
+//   if (!selected.value || qty.value < 1) return
+//   if (!validate()) return
+//   submitting.value = true
+//   try {
+//     if (!holdActive()) {
+//       const res = await publicEventService.createTransaction({
+//         event_id: props.eventId,
+//         ticket_type_id: selected.value.id,
+//         quantity: qty.value,
+//         customer: {
+//           name: buyer.name.trim(),
+//           email: buyer.email.trim(),
+//           phone: buyer.phone.trim() || undefined
+//         },
+//         widget_session_id: sessionId
+//       })
+//       if (res.status === 'completed') {
+//         done.value = res // free orders complete immediately
+//         return
+//       }
+//       if (!res.widget) throw new Error('Could not start payment. Please try again.')
+//       created.value = res
+//     }
+//     await pay()
+//   } catch (e) {
+//     const msg = e?.response?.data?.error || e?.message || 'Something went wrong. Please try again.'
+//     error.value = /not configured/i.test(msg)
+//       ? 'Payments are not enabled yet. Please try again later.'
+//       : msg
+//   } finally {
+//     submitting.value = false
+//   }
+// }
+
+
 async function submit() {
   error.value = ''
   notice.value = ''
+
   if (!selected.value || qty.value < 1) return
   if (!validate()) return
+
   submitting.value = true
+
   try {
-    if (!holdActive()) {
+    // Free tickets retain your existing checkout process.
+    if (selected.value.is_free || total.value === 0) {
       const res = await publicEventService.createTransaction({
         event_id: props.eventId,
         ticket_type_id: selected.value.id,
@@ -211,23 +254,41 @@ async function submit() {
         },
         widget_session_id: sessionId
       })
+
       if (res.status === 'completed') {
-        done.value = res // free orders complete immediately
+        done.value = res
         return
       }
-      if (!res.widget) throw new Error('Could not start payment. Please try again.')
-      created.value = res
+
+      throw new Error('Unable to issue free tickets.')
     }
-    await pay()
+
+    // Paid tickets: initialize Paystack.
+    await runCheckout({
+      ticket_type_id: selected.value.id,
+      quantity: qty.value,
+      customer_name: buyer.name.trim(),
+      customer_phone: buyer.phone.trim()
+    })
+
+    // The browser redirects to Paystack here.
+    // Code after this normally won't execute.
+
   } catch (e) {
-    const msg = e?.response?.data?.error || e?.message || 'Something went wrong. Please try again.'
-    error.value = /not configured/i.test(msg)
-      ? 'Payments are not enabled yet. Please try again later.'
-      : msg
+    console.error('[TicketPicker] Payment error:', e)
+
+    const msg =
+      e?.message ||
+      'Something went wrong. Please try again.'
+
+    error.value = msg
+
   } finally {
     submitting.value = false
   }
 }
+
+
 function testOpenQuidly() {
   const widget = window.embedQuidlyPay
 
