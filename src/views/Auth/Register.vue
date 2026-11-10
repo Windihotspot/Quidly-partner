@@ -102,7 +102,7 @@ async function handleRegister() {
       'Account created successfully. You can now log in.'
 
     redirectTimer = setTimeout(() => {
-      router.push('/')
+      router.push('/login')
     }, 2000)
   } catch {
     // The auth store handles the registration error.
@@ -355,7 +355,7 @@ async function handleRegister() {
 
           <p class="login-prompt">
             Already have an account?
-            <router-link to="/" class="login-link">
+            <router-link to="/login" class="login-link">
               Log in
             </router-link>
           </p>

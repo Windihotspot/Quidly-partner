@@ -1,11 +1,18 @@
 import { createRouter, createWebHistory } from 'vue-router'
 import { useAuthStore } from '@/stores/authStore'
 import { supabase } from '@/services/supabase'
+import LandingPage from '@/views/public/LandingPage.vue'
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
 
   routes: [
+    {
+      path: '/',
+      name: 'home',
+      component: LandingPage,
+      meta: { guestOnly: true }
+    },
     {
       path: '/register',
       name: 'register',
@@ -13,7 +20,7 @@ const router = createRouter({
       meta: { guestOnly: true }
     },
     {
-      path: '/',
+      path: '/login',
       name: 'login',
       component: () => import('@/views/Login.vue'),
       meta: { guestOnly: true }
