@@ -33,6 +33,13 @@ const router = createRouter({
       meta: { public: true }
     },
     {
+      path: '/not-found',
+      name: 'not-found',
+      component: () => import('@/views/NotFound.vue'),
+      props: true,
+      meta: { public: true }
+    },
+    {
       path: '/docs',
       name: 'docs',
       component: () => import('@/views/Documentation.vue'),
