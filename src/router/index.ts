@@ -1,4 +1,3 @@
-
 import { createRouter, createWebHistory } from 'vue-router'
 import { useAuthStore } from '@/stores/authStore'
 import LandingPage from '@/views/public/LandingPage.vue'
@@ -119,7 +118,31 @@ const router = createRouter({
         requiresAuth: true,
         requiresSuperAdmin: true
       }
-    }
+    },
+    {
+      path: '/admin/partners',
+      name: 'admin-partners',
+      component: () => import('@/views/admin/AdminPartnersPage.vue'),
+      meta: { requiresAuth: true, superAdmin: true }
+    },
+    {
+      path: '/admin/kyc',
+      name: 'admin-kyc',
+      component: () => import('@/views/admin/AdminKycPage.vue'),
+      meta: { requiresAuth: true, superAdmin: true }
+    },
+    {
+      path: '/admin/transactions',
+      name: 'admin-transactions',
+      component: () => import('@/views/admin/AdminTransactionsPage.vue'),
+      meta: { requiresAuth: true, superAdmin: true }
+    },
+    {
+  path: '/admin/events',
+  name: 'admin-events',
+  component: () => import('@/views/admin/AdminEventsPage.vue'),
+  meta: { requiresAuth: true, superAdmin: true },
+},
   ]
 })
 
@@ -136,10 +159,10 @@ router.beforeEach(async (to) => {
   }
 
   // Check the actual Supabase session.
-const {
-  data: { session },
-  error
-} = await supabase.auth.getSession()
+  const {
+    data: { session },
+    error
+  } = await supabase.auth.getSession()
   if (error || !session) {
     auth.user = null
     auth.partner = null
@@ -175,23 +198,17 @@ const {
 
   // Super Admin-only routes.
   if (to.meta.requiresSuperAdmin && !isSuperAdmin) {
-    return hasPartner
-      ? { name: 'dashboard' }
-      : { name: 'login' }
+    return hasPartner ? { name: 'dashboard' } : { name: 'login' }
   }
 
   // Partner-only routes.
   if (to.meta.requiresPartner && !hasPartner) {
-    return isSuperAdmin
-      ? { name: 'admin-dashboard' }
-      : { name: 'login' }
+    return isSuperAdmin ? { name: 'admin-dashboard' } : { name: 'login' }
   }
 
   // Redirect authenticated users away from guest pages.
   if (to.meta.guestOnly && isAuthenticated) {
-    return isSuperAdmin
-      ? { name: 'admin-dashboard' }
-      : { name: 'dashboard' }
+    return isSuperAdmin ? { name: 'admin-dashboard' } : { name: 'dashboard' }
   }
 
   return true
