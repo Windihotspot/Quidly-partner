@@ -1,7 +1,8 @@
+
 import { createRouter, createWebHistory } from 'vue-router'
 import { useAuthStore } from '@/stores/authStore'
-import { supabase } from '@/services/supabase'
 import LandingPage from '@/views/public/LandingPage.vue'
+import { supabase } from '@/services/supabase'
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -38,105 +39,133 @@ const router = createRouter({
       component: () => import('@/views/Documentation.vue'),
       meta: { public: true }
     },
+
+    // Partner routes
     {
       path: '/widget',
       name: 'widget',
       component: () => import('@/views/Widget.vue'),
-      meta: { requiresAuth: true }
+      meta: { requiresAuth: true, requiresPartner: true }
     },
     {
       path: '/kyc',
       name: 'kyc',
       component: () => import('@/views/Kyc.vue'),
-      meta: { requiresAuth: true }
+      meta: { requiresAuth: true, requiresPartner: true }
     },
     {
       path: '/dashboard',
       name: 'dashboard',
       component: () => import('@/views/DashboardOverview.vue'),
-      meta: { requiresAuth: true }
+      meta: { requiresAuth: true, requiresPartner: true }
     },
     {
       path: '/api-keys',
       name: 'api-keys',
       component: () => import('@/views/ApiKeys.vue'),
-      meta: { requiresAuth: true }
+      meta: { requiresAuth: true, requiresPartner: true }
     },
     {
       path: '/events',
       name: 'events',
       component: () => import('@/views/Events.vue'),
-      meta: { requiresAuth: true }
+      meta: { requiresAuth: true, requiresPartner: true }
     },
     {
       path: '/events/new',
       name: 'event-new',
       component: () => import('@/views/events/EventWizard.vue'),
       props: { step: 'details' },
-      meta: { requiresAuth: true }
+      meta: { requiresAuth: true, requiresPartner: true }
     },
     {
       path: '/events/:id/:step(details|appearance|tickets|publish)',
       name: 'event-edit',
       component: () => import('@/views/events/EventWizard.vue'),
-      props: true
+      props: true,
+      meta: { requiresAuth: true, requiresPartner: true }
     },
     {
       path: '/webhooks',
       name: 'webhooks',
       component: () => import('@/views/WebhooksPage.vue'),
-      meta: { requiresAuth: true }
+      meta: { requiresAuth: true, requiresPartner: true }
     },
     {
       path: '/settlements',
       name: 'settlements',
       component: () => import('@/views/SettlementsPage.vue'),
-      meta: { requiresAuth: true }
+      meta: { requiresAuth: true, requiresPartner: true }
     },
     {
       path: '/settings',
       name: 'settings',
       component: () => import('@/views/settings/PartnersettingsPage.vue'),
-      meta: { requiresAuth: true }
+      meta: { requiresAuth: true, requiresPartner: true }
     },
     {
       path: '/orders',
       name: 'orders',
       component: () => import('@/views/orders/Orders.vue'),
-      meta: { requiresAuth: true }
+      meta: { requiresAuth: true, requiresPartner: true }
+    },
+
+    // Platform Super Admin
+    {
+      path: '/admin',
+      name: 'admin-dashboard',
+      component: () => import('@/views/admin/AdminDashboardPage.vue'),
+      meta: {
+        requiresAuth: true,
+        requiresSuperAdmin: true
+      }
     }
   ]
 })
 
-// Restore/check the Supabase session before protecting routes.
+// Restore authentication before navigating.
 let sessionChecked = false
 
 router.beforeEach(async (to) => {
   const auth = useAuthStore()
 
+  // Restore the session once before route evaluation.
   if (!sessionChecked) {
-    try {
-      await auth.fetchSession()
-    } catch (error) {
-      console.error('Failed to restore authentication session:', error)
-    } finally {
-      sessionChecked = true
-    }
+    await auth.fetchSession()
+    sessionChecked = true
   }
 
-  // Check Supabase's current session, not just cached partner data.
-  const {
-    data: { session }
-  } = await supabase.auth.getSession()
-
-  if (!session && auth.partner) {
+  // Check the actual Supabase session.
+const {
+  data: { session },
+  error
+} = await supabase.auth.getSession()
+  if (error || !session) {
+    auth.user = null
     auth.partner = null
+    auth.isSuperAdmin = false
+
     localStorage.removeItem('quidly_partner_session')
+
+    if (to.meta.requiresAuth || to.meta.guestOnly) {
+      if (to.name !== 'login') {
+        return {
+          name: 'login',
+          query: { redirect: to.fullPath }
+        }
+      }
+    }
+
+    return true
   }
 
-  const isAuthenticated = Boolean(session && auth.partner)
+  // Authentication is based on the Supabase user,
+  // NOT the existence of a partner profile.
+  const isAuthenticated = !!auth.user
+  const isSuperAdmin = auth.isSuperAdmin
+  const hasPartner = !!auth.partner
 
-  // Protect every route marked as requiring authentication.
+  // Require authentication.
   if (to.meta.requiresAuth && !isAuthenticated) {
     return {
       name: 'login',
@@ -144,9 +173,25 @@ router.beforeEach(async (to) => {
     }
   }
 
-  // Keep authenticated users out of login and registration.
+  // Super Admin-only routes.
+  if (to.meta.requiresSuperAdmin && !isSuperAdmin) {
+    return hasPartner
+      ? { name: 'dashboard' }
+      : { name: 'login' }
+  }
+
+  // Partner-only routes.
+  if (to.meta.requiresPartner && !hasPartner) {
+    return isSuperAdmin
+      ? { name: 'admin-dashboard' }
+      : { name: 'login' }
+  }
+
+  // Redirect authenticated users away from guest pages.
   if (to.meta.guestOnly && isAuthenticated) {
-    return { name: 'dashboard' }
+    return isSuperAdmin
+      ? { name: 'admin-dashboard' }
+      : { name: 'dashboard' }
   }
 
   return true

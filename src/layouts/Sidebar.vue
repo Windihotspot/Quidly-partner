@@ -6,8 +6,9 @@ import { useAuthStore } from '@/stores/authStore'
 defineEmits(['navigate'])
 
 const authStore = useAuthStore()
+const userRole = computed(() =>
+  authStore.isSuperAdmin ? 'super_admin' : authStore.partner?.role?.toLowerCase() || 'partner')
 
-const userRole = computed(() => authStore.partner?.role?.toLowerCase() || 'partner')
 const visibleSidebarItems = computed(() => {
   return sidebarItems.filter((group) => {
     return group.roles?.includes(userRole.value)

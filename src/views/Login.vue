@@ -41,10 +41,13 @@ async function handleLogin() {
   if (!valid) return
 
   try {
-    await authStore.login(email.value.trim(), password.value)
-    const redirect = router.currentRoute.value.query.redirect
+    const result = await authStore.login(email.value, password.value)
 
-    router.replace(typeof redirect === 'string' ? redirect : '/dashboard')
+    if (result.isSuperAdmin) {
+      router.push('/admin')
+    } else {
+      router.push('/dashboard')
+    }
   } catch {
     // The auth store handles the login error.
   }
