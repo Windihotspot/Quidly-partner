@@ -76,10 +76,10 @@ const sidebarItems = [
     section: 'SYSTEM',
     roles: ['super_admin'],
     items: [
-      { nav: 'a-banks', label: 'Banks', icon: 'mdi mdi-bank-outline', to: '/admin/banks' },
-      { nav: 'a-ops', label: 'Webhooks & Keys', icon: 'mdi mdi-webhook', to: '/admin/ops' },
-      { nav: 'a-audit', label: 'Audit Log', icon: 'mdi mdi-history', to: '/admin/audit' },
-      { nav: 'a-users', label: 'Admins', icon: 'mdi mdi-account-key-outline', to: '/admin/users' }
+      { nav: 'a-banks', label: 'Banks', icon: 'mdi mdi-bank-outline', to: '/admin' },
+      { nav: 'a-ops', label: 'Webhooks & Keys', icon: 'mdi mdi-webhook', to: '/admin' },
+      { nav: 'a-audit', label: 'Audit Log', icon: 'mdi mdi-history', to: '/admin' },
+      { nav: 'a-users', label: 'Admins', icon: 'mdi mdi-account-key-outline', to: '/admin' }
     ]
   }
 ]
